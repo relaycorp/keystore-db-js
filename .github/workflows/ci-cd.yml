@@ -59,17 +59,20 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - name: Generate docs
-        run: npm run doc-api
+# TODO: Restore when https://github.com/TypeStrong/typedoc/issues/1589 is fixed
+#      - name: Generate docs
+#        run: npm run doc-api
 
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npx semantic-release
-      - name: Publish documentation
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/docs
-          allow_empty_commit: true
+
+# TODO: Restore when https://github.com/TypeStrong/typedoc/issues/1589 is fixed
+#      - name: Publish documentation
+#        uses: peaceiris/actions-gh-pages@v3
+#        with:
+#          github_token: ${{ secrets.GITHUB_TOKEN }}
+#          publish_dir: ./build/docs
+#          allow_empty_commit: true
