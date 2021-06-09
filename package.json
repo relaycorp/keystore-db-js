@@ -8,6 +8,7 @@
   },
   "description": "TypeORM-based Private and Public Key Store extension for Awala in JavaScript",
   "typings": "build/index.d.ts",
+  "type": "module",
   "module": "build/index.js",
   "repository": "https://github.com/relaycorp/keystore-db-js",
   "homepage": "https://docs.relaycorp.tech/keystore-db-js/",
