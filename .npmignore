@@ -1,7 +1,6 @@
 *
 
-!build/main/**
-!build/module/**
+!build/**
 _test_utils.*
 *.spec.js*
 

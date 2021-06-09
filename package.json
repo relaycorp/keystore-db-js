@@ -7,9 +7,8 @@
     "url": "https://relaycorp.tech/"
   },
   "description": "TypeORM-based Private and Public Key Store extension for Awala in JavaScript",
-  "main": "build/main/index.js",
-  "typings": "build/main/index.d.ts",
-  "module": "build/module/index.js",
+  "typings": "build/index.d.ts",
+  "module": "build/index.js",
   "repository": "https://github.com/relaycorp/keystore-db-js",
   "homepage": "https://docs.relaycorp.tech/keystore-db-js/",
   "license": "MIT",
@@ -18,9 +17,8 @@
     "typeorm"
   ],
   "scripts": {
-    "build": "run-s clean && run-p build:*",
-    "build:main": "tsc -p tsconfig.json",
-    "build:module": "tsc -p tsconfig.module.json",
+    "build": "run-s clean transpile",
+    "transpile": "tsc",
     "fix": "run-s fix:*",
     "fix:prettier": "prettier \"src/**/*.ts\" --write",
     "fix:tslint": "tslint --fix --project .",
