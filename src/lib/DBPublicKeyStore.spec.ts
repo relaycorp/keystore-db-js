@@ -4,7 +4,7 @@ import {
   generateECDHKeyPair,
   generateRSAKeyPair,
   issueGatewayCertificate,
-  OriginatorSessionKey,
+  SessionKey,
 } from '@relaycorp/relaynet-core';
 import { getConnection, Repository } from 'typeorm';
 
@@ -40,7 +40,7 @@ beforeAll(async () => {
 });
 
 const KEY_ID = Buffer.from([1, 3, 5, 7, 9]);
-let peerSessionKey: OriginatorSessionKey;
+let peerSessionKey: SessionKey;
 beforeAll(() => {
   peerSessionKey = { keyId: KEY_ID, publicKey: peerSessionPublicKey };
 });
