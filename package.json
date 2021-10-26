@@ -39,7 +39,7 @@
   "dependencies": {
     "@relaycorp/relaynet-core": "^1.50.0",
     "buffer-to-arraybuffer": "0.0.6",
-    "typeorm": "^0.2.34"
+    "typeorm": "^0.2.38"
   },
   "peerDependencies": {
     "@relaycorp/relaynet-core": "< 2.0",
