@@ -1,9 +1,9 @@
 import {
-  BoundPrivateKeyData,
   Certificate,
+  NodePrivateKeyData,
   PrivateKeyData,
   PrivateKeyStore,
-  UnboundPrivateKeyData,
+  SubsequentSessionPrivateKeyData,
 } from '@relaycorp/relaynet-core';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { Repository } from 'typeorm';
@@ -45,10 +45,11 @@ export class DBPrivateKeyStore extends PrivateKeyStore {
 
   protected async saveKey(privateKeyData: PrivateKeyData, keyId: string): Promise<void> {
     const privateKey = await this.repository.create({
-      certificateDer: (privateKeyData as UnboundPrivateKeyData).certificateDer,
+      certificateDer: (privateKeyData as NodePrivateKeyData).certificateDer,
       derSerialization: privateKeyData.keyDer,
       id: keyId,
-      recipientPublicKeyDigest: (privateKeyData as BoundPrivateKeyData).recipientPublicKeyDigest,
+      recipientPublicKeyDigest: (privateKeyData as SubsequentSessionPrivateKeyData)
+        .recipientPublicKeyDigest,
       type: privateKeyData.type as PrivateKeyType,
     });
     await this.repository.save(privateKey);
