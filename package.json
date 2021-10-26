@@ -49,7 +49,7 @@
     "@relaycorp/relaynet-testing": "^1.3.0",
     "@relaycorp/shared-config": "^1.6.0",
     "@types/jest": "^26.0.23",
-    "del-cli": "^4.0.0",
+    "del-cli": "^4.0.1",
     "jest": "^24.9.0",
     "jest-extended": "^0.11.5",
     "npm-run-all": "^4.1.5",
@@ -59,7 +59,7 @@
     "ts-jest": "^24.3.0",
     "ts-node": "^10.1.0",
     "tslint": "^5.20.1",
-    "typedoc": "^0.21.4",
+    "typedoc": "^0.22.7",
     "typescript": "^4.3.5"
   },
   "prettier": "@relaycorp/shared-config/.prettierrc.json",
