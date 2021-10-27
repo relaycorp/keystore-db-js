@@ -14,9 +14,9 @@ export class DBPublicKeyStore extends PublicKeyStore {
       return null;
     }
     return {
-      publicKeyCreationTime: publicKey!.creationDate,
-      publicKeyDer: publicKey!.derSerialization,
-      publicKeyId: publicKey!.id,
+      publicKeyCreationTime: publicKey.creationDate,
+      publicKeyDer: publicKey.derSerialization,
+      publicKeyId: publicKey.id,
     };
   }
 
