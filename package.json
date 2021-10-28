@@ -39,7 +39,7 @@
   "dependencies": {
     "@relaycorp/relaynet-core": "^1.50.0",
     "buffer-to-arraybuffer": "0.0.6",
-    "typeorm": "^0.2.34"
+    "typeorm": "^0.2.38"
   },
   "peerDependencies": {
     "@relaycorp/relaynet-core": "< 2.0",
@@ -57,7 +57,7 @@
     "reflect-metadata": "^0.1.13",
     "sqlite3": "^5.0.2",
     "ts-jest": "^24.3.0",
-    "ts-node": "^10.1.0",
+    "ts-node": "^10.4.0",
     "tslint": "^5.20.1",
     "typedoc": "^0.22.7",
     "typescript": "^4.3.5"
