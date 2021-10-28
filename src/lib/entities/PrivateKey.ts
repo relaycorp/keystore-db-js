@@ -20,5 +20,5 @@ export class PrivateKey {
   public readonly certificateDer!: Buffer | null;
 
   @Column({ type: 'varchar', nullable: true })
-  public readonly recipientPublicKeyDigest!: string | null;
+  public readonly peerPrivateAddress!: string | null;
 }
