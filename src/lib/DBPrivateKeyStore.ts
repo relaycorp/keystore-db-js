@@ -32,7 +32,7 @@ export class DBPrivateKeyStore extends PrivateKeyStore {
     if (key.type === PrivateKeyType.SESSION_SUBSEQUENT) {
       return {
         keyDer: key.derSerialization,
-        recipientPublicKeyDigest: key.recipientPublicKeyDigest!!,
+        peerPrivateAddress: key.peerPrivateAddress!,
         type: PrivateKeyType.SESSION_SUBSEQUENT,
       };
     }
@@ -48,8 +48,7 @@ export class DBPrivateKeyStore extends PrivateKeyStore {
       certificateDer: (privateKeyData as NodePrivateKeyData).certificateDer,
       derSerialization: privateKeyData.keyDer,
       id: keyId,
-      recipientPublicKeyDigest: (privateKeyData as SubsequentSessionPrivateKeyData)
-        .recipientPublicKeyDigest,
+      peerPrivateAddress: (privateKeyData as SubsequentSessionPrivateKeyData).peerPrivateAddress,
       type: privateKeyData.type as PrivateKeyType,
     });
     await this.repository.save(privateKey);
