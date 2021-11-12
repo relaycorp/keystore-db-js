@@ -43,6 +43,7 @@ beforeAll(async () => {
 
 const INITIAL_SESSION_KEY_ID = Buffer.from('initial session key id');
 const SUBSEQUENT_SUBSEQUENT_KEY_ID = Buffer.from('subsequent key id');
+const SUBSEQUENT_SUBSEQUENT_KEY_ID_HEX = SUBSEQUENT_SUBSEQUENT_KEY_ID.toString('hex');
 
 describe('fetchKey', () => {
   test('Node key should be returned', async () => {
@@ -84,20 +85,20 @@ describe('fetchKey', () => {
   });
 
   test('Lookup should fail if key is bound to different recipient', async () => {
+    const peerPrivateAddress = await recipientNodeCertificate.calculateSubjectPrivateAddress();
     await keystore.saveSubsequentSessionKey(
       sessionKeyPair.privateKey,
       SUBSEQUENT_SUBSEQUENT_KEY_ID,
-      await recipientNodeCertificate.calculateSubjectPrivateAddress(),
+      peerPrivateAddress,
     );
 
+    const wrongPeerPrivateAddress = await nodeCertificate.calculateSubjectPrivateAddress();
     await expect(
-      keystore.fetchSessionKey(
-        SUBSEQUENT_SUBSEQUENT_KEY_ID,
-        await nodeCertificate.calculateSubjectPrivateAddress(),
-      ),
+      keystore.fetchSessionKey(SUBSEQUENT_SUBSEQUENT_KEY_ID, wrongPeerPrivateAddress),
     ).rejects.toEqual(
       new UnknownKeyError(
-        `Session key ${SUBSEQUENT_SUBSEQUENT_KEY_ID.toString('hex')} is bound to another recipient`,
+        `Session key ${SUBSEQUENT_SUBSEQUENT_KEY_ID_HEX} is bound to another recipient ` +
+          `(${peerPrivateAddress}, not ${wrongPeerPrivateAddress})`,
       ),
     );
   });
@@ -141,7 +142,7 @@ describe('saveKey', () => {
       await recipientNodeCertificate.calculateSubjectPrivateAddress(),
     );
 
-    const key = await privateKeyRepository.findOne(SUBSEQUENT_SUBSEQUENT_KEY_ID.toString('hex'));
+    const key = await privateKeyRepository.findOne(SUBSEQUENT_SUBSEQUENT_KEY_ID_HEX);
     expect(key).toMatchObject<Partial<PrivateKey>>({
       certificateDer: null,
       derSerialization: await derSerializePrivateKey(sessionKeyPair.privateKey),
