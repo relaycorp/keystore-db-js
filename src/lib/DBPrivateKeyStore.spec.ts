@@ -149,7 +149,15 @@ describe('Retrieval', () => {
     );
   });
 
-  test('UnknownKeyError should be raised if record is missing', async () => {
-    await expect(keystore.retrieveIdentityKey('missing')).rejects.toBeInstanceOf(UnknownKeyError);
+  test('UnknownKeyError should be raised if identity key is missing', async () => {
+    await expect(keystore.retrieveIdentityKey(privateAddress)).rejects.toBeInstanceOf(
+      UnknownKeyError,
+    );
+  });
+
+  test('UnknownKeyError should be raised if session key is missing', async () => {
+    await expect(
+      keystore.retrieveSessionKey(sessionKeyPair.sessionKey.keyId, PEER_PRIVATE_ADDRESS),
+    ).rejects.toBeInstanceOf(UnknownKeyError);
   });
 });
