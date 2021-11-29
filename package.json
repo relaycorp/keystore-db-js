@@ -39,7 +39,7 @@
   "dependencies": {
     "@relaycorp/relaynet-core": "^1.54.1",
     "buffer-to-arraybuffer": "0.0.6",
-    "typeorm": "^0.2.38"
+    "typeorm": "^0.2.41"
   },
   "peerDependencies": {
     "@relaycorp/relaynet-core": "< 2.0",
@@ -59,7 +59,7 @@
     "ts-jest": "^24.3.0",
     "ts-node": "^10.4.0",
     "tslint": "^5.20.1",
-    "typedoc": "^0.22.8",
+    "typedoc": "^0.22.10",
     "typescript": "^4.3.5"
   },
   "prettier": "@relaycorp/shared-config/.prettierrc.json",
