@@ -1,4 +1,4 @@
-import { derSerializePublicKey, SessionKey } from '@relaycorp/relaynet-core';
+import { derSerializePublicKey, SessionKey, SessionKeyPair } from '@relaycorp/relaynet-core';
 import { getConnection, Repository } from 'typeorm';
 
 import { setUpTestDBConnection } from './_test_utils';
@@ -18,7 +18,7 @@ beforeEach(() => {
 const peerPrivateAddress = '0deadbeef';
 let peerSessionKey: SessionKey;
 beforeAll(async () => {
-  const { sessionKey } = await SessionKey.generate();
+  const { sessionKey } = await SessionKeyPair.generate();
   peerSessionKey = sessionKey;
 });
 
