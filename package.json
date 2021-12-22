@@ -41,7 +41,7 @@
     "@relaycorp/relaynet-core": "^1.57.1",
     "buffer-to-arraybuffer": "0.0.6",
     "date-fns": "^2.27.0",
-    "date-fns-tz": "^1.1.7",
+    "date-fns-tz": "^1.2.0",
     "typeorm": "^0.2.41"
   },
   "peerDependencies": {
