@@ -51,6 +51,7 @@
   "devDependencies": {
     "@relaycorp/shared-config": "^1.6.0",
     "@types/jest": "^27.0.3",
+    "@typescript/lib-dom": "npm:@types/web@0.0.48",
     "del-cli": "^4.0.1",
     "jest": "^24.9.0",
     "jest-extended": "^1.2.0",
