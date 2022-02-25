@@ -1,3 +1,4 @@
+export { Certificate } from './lib/entities/Certificate';
 export { PrivateKey } from './lib/entities/PrivateKey';
 export { PublicKey } from './lib/entities/PublicKey';
 
