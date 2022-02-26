@@ -32,7 +32,10 @@ beforeAll(async () => {
   validCertificate = await issueGatewayCertificate({
     issuerPrivateKey: identityKeyPair.privateKey,
     subjectPublicKey: identityKeyPair.publicKey,
-    validityEndDate: addSeconds(new Date(), 15),
+    validityEndDate: addSeconds(
+      new Date(),
+      30, // Be generous -- GitHub CI is slow.
+    ),
   });
   expiredCertificate = await issueGatewayCertificate({
     issuerPrivateKey: identityKeyPair.privateKey,
@@ -92,7 +95,7 @@ describe('retrieveLatestSerialization', () => {
     const newestCertificate = await issueGatewayCertificate({
       issuerPrivateKey: identityKeyPair.privateKey,
       subjectPublicKey: identityKeyPair.publicKey,
-      validityEndDate: addSeconds(validCertificate.expiryDate, 1),
+      validityEndDate: addSeconds(validCertificate.expiryDate, 3),
     });
     await certificateStore.save(newestCertificate);
 
@@ -119,7 +122,7 @@ describe('retrieveAllSerializations', () => {
     const newestCertificate = await issueGatewayCertificate({
       issuerPrivateKey: identityKeyPair.privateKey,
       subjectPublicKey: identityKeyPair.publicKey,
-      validityEndDate: addSeconds(validCertificate.expiryDate, 1),
+      validityEndDate: addSeconds(validCertificate.expiryDate, 3),
     });
     await certificateStore.save(newestCertificate);
 
