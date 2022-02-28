@@ -38,7 +38,7 @@
     "node": ">=12"
   },
   "dependencies": {
-    "@relaycorp/relaynet-core": "^1.59.0",
+    "@relaycorp/relaynet-core": "^1.59.3",
     "buffer-to-arraybuffer": "0.0.6",
     "date-fns": "^2.28.0",
     "date-fns-tz": "^1.2.2",
