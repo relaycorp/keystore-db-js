@@ -10,6 +10,8 @@ const ENTITIES_DIR_PATH = join(
 );
 
 export function setUpTestDBConnection(): void {
+  let connection: Connection;
+
   beforeAll(async () => {
     const connectionOptions = {
       database: ':memory:',
@@ -21,8 +23,6 @@ export function setUpTestDBConnection(): void {
     };
     connection = await createConnection(connectionOptions as any);
   });
-
-  let connection: Connection;
 
   beforeEach(async () => {
     await connection.synchronize(true);
