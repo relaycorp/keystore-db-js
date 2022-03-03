@@ -1,5 +1,6 @@
 import {
   Certificate,
+  CertificateScope as AwalaCertificateScope,
   generateRSAKeyPair,
   getPrivateAddressFromIdentityKey,
   issueGatewayCertificate,
@@ -9,7 +10,7 @@ import { getConnection, Repository } from 'typeorm';
 
 import { setUpTestDBConnection } from './_test_utils';
 import { DBCertificateStore } from './DBCertificateStore';
-import { Certificate as CertificateEntity } from './entities/Certificate';
+import { Certificate as CertificateEntity, CertificateScope } from './entities/Certificate';
 
 setUpTestDBConnection();
 
@@ -51,13 +52,27 @@ beforeEach(async () => {
 
 describe('saveData', () => {
   test('All attributes should be saved', async () => {
-    await certificateStore.save(validCertificate);
+    await certificateStore.save(validCertificate, AwalaCertificateScope.PDA);
 
     const certificateRecord = await certificateRepository.findOneOrFail({ subjectPrivateAddress });
     expect(certificateRecord).toMatchObject<Partial<CertificateEntity>>({
       certificateSerialized: Buffer.from(validCertificate.serialize()),
       expiryDate: validCertificate.expiryDate,
     });
+  });
+
+  test('PDA certificate should be stored as such', async () => {
+    await certificateStore.save(validCertificate, AwalaCertificateScope.PDA);
+
+    const certificateRecord = await certificateRepository.findOneOrFail({ subjectPrivateAddress });
+    expect(certificateRecord.scope).toEqual(CertificateScope.PDA);
+  });
+
+  test('CDA certificate should be stored as such', async () => {
+    await certificateStore.save(validCertificate, AwalaCertificateScope.CDA);
+
+    const certificateRecord = await certificateRepository.findOneOrFail({ subjectPrivateAddress });
+    expect(certificateRecord.scope).toEqual(CertificateScope.CDA);
   });
 
   test('The same subject should be allowed to have multiple certificates', async () => {
@@ -67,8 +82,8 @@ describe('saveData', () => {
       validityEndDate: addDays(validCertificate.expiryDate, 1),
     });
 
-    await certificateStore.save(validCertificate);
-    await certificateStore.save(certificate2);
+    await certificateStore.save(validCertificate, AwalaCertificateScope.PDA);
+    await certificateStore.save(certificate2, AwalaCertificateScope.PDA);
 
     const certificateRecords = await certificateRepository.find({ subjectPrivateAddress });
     expect(certificateRecords).toHaveLength(2);
@@ -85,52 +100,102 @@ describe('saveData', () => {
 
 describe('retrieveLatestSerialization', () => {
   test('Nothing should be returned if subject has no certificates', async () => {
-    await expect(certificateStore.retrieveLatest(subjectPrivateAddress)).resolves.toBeNull();
+    await expect(
+      certificateStore.retrieveLatest(subjectPrivateAddress, AwalaCertificateScope.PDA),
+    ).resolves.toBeNull();
+  });
+
+  test('Certificate from another scope should be ignored', async () => {
+    await certificateStore.save(expiredCertificate, AwalaCertificateScope.CDA);
+
+    await expect(
+      certificateStore.retrieveLatest(subjectPrivateAddress, AwalaCertificateScope.PDA),
+    ).resolves.toBeNull();
   });
 
   test('Expired certificates should not be returned', async () => {
-    await certificateStore.save(expiredCertificate);
+    await certificateStore.save(expiredCertificate, AwalaCertificateScope.PDA);
 
-    await expect(certificateStore.retrieveLatest(subjectPrivateAddress)).resolves.toBeNull();
+    await expect(
+      certificateStore.retrieveLatest(subjectPrivateAddress, AwalaCertificateScope.PDA),
+    ).resolves.toBeNull();
   });
 
   test('The latest valid certificate should be returned', async () => {
-    await certificateStore.save(validCertificate);
+    await certificateStore.save(validCertificate, AwalaCertificateScope.PDA);
+
+    const latestCertificate = await certificateStore.retrieveLatest(
+      subjectPrivateAddress,
+      AwalaCertificateScope.PDA,
+    );
+
+    expect(latestCertificate!.isEqual(validCertificate)).toBeTrue();
+  });
+
+  test('Older certificates should be ignored even if added later', async () => {
     const newestCertificate = await issueGatewayCertificate({
       issuerPrivateKey: identityKeyPair.privateKey,
       subjectPublicKey: identityKeyPair.publicKey,
       validityEndDate: addSeconds(validCertificate.expiryDate, 3),
     });
-    await certificateStore.save(newestCertificate);
+    await certificateStore.save(newestCertificate, AwalaCertificateScope.PDA);
+    await certificateStore.save(validCertificate, AwalaCertificateScope.PDA);
 
-    await expect(certificateStore.retrieveLatest(subjectPrivateAddress)).resolves.toSatisfy((c) =>
-      newestCertificate.isEqual(c),
+    const latestCertificate = await certificateStore.retrieveLatest(
+      subjectPrivateAddress,
+      AwalaCertificateScope.PDA,
     );
+
+    expect(latestCertificate!.isEqual(newestCertificate)).toBeTrue();
   });
 });
 
 describe('retrieveAllSerializations', () => {
   test('Nothing should be returned if there are no certificates', async () => {
-    await expect(certificateStore.retrieveAll(subjectPrivateAddress)).resolves.toBeEmpty();
+    await expect(
+      certificateStore.retrieveAll(subjectPrivateAddress, AwalaCertificateScope.PDA),
+    ).resolves.toBeEmpty();
   });
 
   test('Expired certificates should not be returned', async () => {
-    await certificateStore.save(expiredCertificate);
+    await certificateStore.save(expiredCertificate, AwalaCertificateScope.PDA);
 
-    await expect(certificateStore.retrieveAll(subjectPrivateAddress)).resolves.toBeEmpty();
+    await expect(
+      certificateStore.retrieveAll(subjectPrivateAddress, AwalaCertificateScope.PDA),
+    ).resolves.toBeEmpty();
+  });
+
+  test('Certificates from another scope should be ignored', async () => {
+    await certificateStore.save(validCertificate, AwalaCertificateScope.PDA);
+    const cdaCertificate = await issueGatewayCertificate({
+      issuerPrivateKey: identityKeyPair.privateKey,
+      subjectPublicKey: identityKeyPair.publicKey,
+      validityEndDate: validCertificate.expiryDate,
+    });
+    await certificateStore.save(cdaCertificate, AwalaCertificateScope.CDA);
+
+    const allCertificates = await certificateStore.retrieveAll(
+      subjectPrivateAddress,
+      AwalaCertificateScope.PDA,
+    );
+
+    expect(allCertificates).toHaveLength(1);
+    expect(allCertificates[0].isEqual(validCertificate)).toBeTrue();
   });
 
   test('All valid certificates should be returned', async () => {
-    await certificateStore.save(expiredCertificate);
-    await certificateStore.save(validCertificate);
+    await certificateStore.save(validCertificate, AwalaCertificateScope.PDA);
     const newestCertificate = await issueGatewayCertificate({
       issuerPrivateKey: identityKeyPair.privateKey,
       subjectPublicKey: identityKeyPair.publicKey,
       validityEndDate: addSeconds(validCertificate.expiryDate, 3),
     });
-    await certificateStore.save(newestCertificate);
+    await certificateStore.save(newestCertificate, AwalaCertificateScope.PDA);
 
-    const allCertificates = await certificateStore.retrieveAll(subjectPrivateAddress);
+    const allCertificates = await certificateStore.retrieveAll(
+      subjectPrivateAddress,
+      AwalaCertificateScope.PDA,
+    );
 
     expect(allCertificates).toHaveLength(2);
     expect(allCertificates.filter((c) => c.isEqual(validCertificate))).not.toBeEmpty();
@@ -140,7 +205,8 @@ describe('retrieveAllSerializations', () => {
 
 describe('deleteExpired', () => {
   test('Expired certificates should be deleted', async () => {
-    await certificateStore.save(expiredCertificate);
+    await certificateStore.save(expiredCertificate, AwalaCertificateScope.PDA);
+    await certificateStore.save(expiredCertificate, AwalaCertificateScope.CDA);
 
     await certificateStore.deleteExpired();
 
@@ -148,7 +214,7 @@ describe('deleteExpired', () => {
   });
 
   test('Valid certificates should not be deleted', async () => {
-    await certificateStore.save(validCertificate);
+    await certificateStore.save(validCertificate, AwalaCertificateScope.PDA);
 
     await certificateStore.deleteExpired();
 
