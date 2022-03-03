@@ -23,18 +23,22 @@ beforeEach(() => {
 
 let identityKeyPair: CryptoKeyPair;
 let subjectPrivateAddress: string;
-let validCertificate: Certificate;
-let expiredCertificate: Certificate;
 beforeAll(async () => {
   identityKeyPair = await generateRSAKeyPair();
   subjectPrivateAddress = await getPrivateAddressFromIdentityKey(identityKeyPair.publicKey);
+});
 
+let validCertificate: Certificate;
+let expiredCertificate: Certificate;
+beforeEach(async () => {
+  // These tests are sensitive to the validity period of the certificates so, since GitHub Actions
+  // are so slow, we should generate these certificates right before each test.
   validCertificate = await issueGatewayCertificate({
     issuerPrivateKey: identityKeyPair.privateKey,
     subjectPublicKey: identityKeyPair.publicKey,
     validityEndDate: addSeconds(
       new Date(),
-      30, // Be generous -- GitHub CI is slow.
+      10, // Be generous -- GitHub Actions are extremely slow.
     ),
   });
   expiredCertificate = await issueGatewayCertificate({
