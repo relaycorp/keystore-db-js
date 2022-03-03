@@ -74,5 +74,5 @@ function sqlDateFormat(date: Date): string {
 }
 
 function convertScopeFromAwala(awalaScope: AwalaCertificateScope): CertificateScope {
-  return awalaScope === CertificateScope.PDA ? CertificateScope.PDA : CertificateScope.CDA;
+  return awalaScope === AwalaCertificateScope.PDA ? CertificateScope.PDA : CertificateScope.CDA;
 }
