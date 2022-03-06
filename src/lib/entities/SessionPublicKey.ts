@@ -1,7 +1,7 @@
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
-export class PublicKey {
+export class SessionPublicKey {
   @PrimaryColumn()
   public readonly peerPrivateAddress!: string;
 
