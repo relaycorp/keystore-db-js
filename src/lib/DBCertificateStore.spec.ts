@@ -25,7 +25,7 @@ let identityKeyPair: CryptoKeyPair;
 let subjectPrivateAddress: string;
 beforeAll(async () => {
   identityKeyPair = await generateRSAKeyPair();
-  subjectPrivateAddress = await getPrivateAddressFromIdentityKey(identityKeyPair.publicKey);
+  subjectPrivateAddress = await getPrivateAddressFromIdentityKey(identityKeyPair.publicKey!);
 });
 
 let validCertificate: Certificate;
@@ -34,16 +34,16 @@ beforeEach(async () => {
   // These tests are sensitive to the validity period of the certificates so, since GitHub Actions
   // are so slow, we should generate these certificates right before each test.
   validCertificate = await issueGatewayCertificate({
-    issuerPrivateKey: identityKeyPair.privateKey,
-    subjectPublicKey: identityKeyPair.publicKey,
+    issuerPrivateKey: identityKeyPair.privateKey!,
+    subjectPublicKey: identityKeyPair.publicKey!,
     validityEndDate: addSeconds(
       new Date(),
       10, // Be generous -- GitHub Actions are extremely slow.
     ),
   });
   expiredCertificate = await issueGatewayCertificate({
-    issuerPrivateKey: identityKeyPair.privateKey,
-    subjectPublicKey: identityKeyPair.publicKey,
+    issuerPrivateKey: identityKeyPair.privateKey!,
+    subjectPublicKey: identityKeyPair.publicKey!,
     validityEndDate: subSeconds(new Date(), 1),
     validityStartDate: subSeconds(new Date(), 2),
   });
@@ -70,8 +70,8 @@ describe('saveData', () => {
 
   test('The same subject should be allowed to have multiple certificates', async () => {
     const certificate2 = await issueGatewayCertificate({
-      issuerPrivateKey: identityKeyPair.privateKey,
-      subjectPublicKey: identityKeyPair.publicKey,
+      issuerPrivateKey: identityKeyPair.privateKey!,
+      subjectPublicKey: identityKeyPair.publicKey!,
       validityEndDate: addDays(validCertificate.expiryDate, 1),
     });
 
@@ -117,8 +117,8 @@ describe('retrieveLatestSerialization', () => {
   test('The latest valid certificate should be returned', async () => {
     await certificateStore.save(validCertificate, subjectPrivateAddress);
     const newerCertificate = await issueGatewayCertificate({
-      issuerPrivateKey: identityKeyPair.privateKey,
-      subjectPublicKey: identityKeyPair.publicKey,
+      issuerPrivateKey: identityKeyPair.privateKey!,
+      subjectPublicKey: identityKeyPair.publicKey!,
       validityEndDate: addSeconds(new Date(), 60),
     });
     await certificateStore.save(newerCertificate, subjectPrivateAddress);
@@ -133,8 +133,8 @@ describe('retrieveLatestSerialization', () => {
 
   test('Older certificates should be ignored even if added later', async () => {
     const newestCertificate = await issueGatewayCertificate({
-      issuerPrivateKey: identityKeyPair.privateKey,
-      subjectPublicKey: identityKeyPair.publicKey,
+      issuerPrivateKey: identityKeyPair.privateKey!,
+      subjectPublicKey: identityKeyPair.publicKey!,
       validityEndDate: addSeconds(validCertificate.expiryDate, 3),
     });
     await certificateStore.save(newestCertificate, subjectPrivateAddress);
@@ -167,8 +167,8 @@ describe('retrieveAllSerializations', () => {
   test('Certificates from another issuer should be ignored', async () => {
     await certificateStore.save(validCertificate, subjectPrivateAddress);
     const differentIssuerCertificate = await issueGatewayCertificate({
-      issuerPrivateKey: identityKeyPair.privateKey,
-      subjectPublicKey: identityKeyPair.publicKey,
+      issuerPrivateKey: identityKeyPair.privateKey!,
+      subjectPublicKey: identityKeyPair.publicKey!,
       validityEndDate: validCertificate.expiryDate,
     });
     await certificateStore.save(differentIssuerCertificate, `not-${subjectPrivateAddress}`);
@@ -185,8 +185,8 @@ describe('retrieveAllSerializations', () => {
   test('All valid certificates should be returned', async () => {
     await certificateStore.save(validCertificate, subjectPrivateAddress);
     const newestCertificate = await issueGatewayCertificate({
-      issuerPrivateKey: identityKeyPair.privateKey,
-      subjectPublicKey: identityKeyPair.publicKey,
+      issuerPrivateKey: identityKeyPair.privateKey!,
+      subjectPublicKey: identityKeyPair.publicKey!,
       validityEndDate: addSeconds(validCertificate.expiryDate, 3),
     });
     await certificateStore.save(newestCertificate, subjectPrivateAddress);
