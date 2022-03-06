@@ -1,18 +1,69 @@
-import { derSerializePublicKey, SessionKey, SessionKeyPair } from '@relaycorp/relaynet-core';
+import {
+  derSerializePublicKey,
+  generateRSAKeyPair,
+  getPrivateAddressFromIdentityKey,
+  SessionKey,
+  SessionKeyPair,
+} from '@relaycorp/relaynet-core';
 import { getConnection, Repository } from 'typeorm';
 
 import { setUpTestDBConnection } from './_test_utils';
 import { DBPublicKeyStore } from './DBPublicKeyStore';
+import { IdentityPublicKey } from './entities/IdentityPublicKey';
 import { SessionPublicKey } from './entities/SessionPublicKey';
 
 setUpTestDBConnection();
 
 let keystore: DBPublicKeyStore;
-let publicKeyRepository: Repository<SessionPublicKey>;
+let identityKeyRepository: Repository<IdentityPublicKey>;
+let sessionKeyRepository: Repository<SessionPublicKey>;
 beforeEach(() => {
   const connection = getConnection();
-  publicKeyRepository = connection.getRepository(SessionPublicKey);
-  keystore = new DBPublicKeyStore(publicKeyRepository);
+  identityKeyRepository = connection.getRepository(IdentityPublicKey);
+  sessionKeyRepository = connection.getRepository(SessionPublicKey);
+  keystore = new DBPublicKeyStore(identityKeyRepository, sessionKeyRepository);
+});
+
+describe('Identity keys', () => {
+  let peerIdentityPublicKey: CryptoKey;
+  let peerPrivateAddress: string;
+  beforeAll(async () => {
+    const peerKeyPair = await generateRSAKeyPair();
+    peerIdentityPublicKey = peerKeyPair.publicKey;
+    peerPrivateAddress = await getPrivateAddressFromIdentityKey(peerIdentityPublicKey);
+  });
+
+  describe('Save', () => {
+    test('Key should be created if it does not exist', async () => {
+      await keystore.saveIdentityKey(peerIdentityPublicKey);
+
+      const key = await identityKeyRepository.findOne(peerPrivateAddress);
+      expect(key?.derSerialization).toEqual(await derSerializePublicKey(peerIdentityPublicKey));
+    });
+
+    test('Key should be updated if it already exists', async () => {
+      await keystore.saveIdentityKey(peerIdentityPublicKey);
+      await keystore.saveIdentityKey(peerIdentityPublicKey);
+
+      await expect(identityKeyRepository.count({ peerPrivateAddress })).resolves.toEqual(1);
+    });
+  });
+
+  describe('Retrieve', () => {
+    test('Null should be returned if key does not exist', async () => {
+      await expect(keystore.retrieveIdentityKey(peerPrivateAddress)).resolves.toBeNull();
+    });
+
+    test('Existing key should be returned', async () => {
+      await keystore.saveIdentityKey(peerIdentityPublicKey);
+
+      const key = await keystore.retrieveIdentityKey(peerPrivateAddress);
+
+      await expect(derSerializePublicKey(key!)).resolves.toEqual(
+        await derSerializePublicKey(peerIdentityPublicKey),
+      );
+    });
+  });
 });
 
 describe('Session keys', () => {
@@ -23,30 +74,13 @@ describe('Session keys', () => {
     peerSessionKey = sessionKey;
   });
 
-  describe('fetchKey', () => {
-    test('Existing key should be returned', async () => {
-      await keystore.saveSessionKey(peerSessionKey, peerPrivateAddress, new Date());
-
-      const key = await keystore.retrieveLastSessionKey(peerPrivateAddress);
-
-      expect(key?.keyId).toEqual(peerSessionKey.keyId);
-      await expect(derSerializePublicKey(key!.publicKey)).resolves.toEqual(
-        await derSerializePublicKey(peerSessionKey.publicKey),
-      );
-    });
-
-    test('Non-existing key should result in null', async () => {
-      await expect(keystore.retrieveLastSessionKey(peerPrivateAddress)).resolves.toBeNull();
-    });
-  });
-
-  describe('saveKey', () => {
+  describe('Save', () => {
     test('Key should be created if it does not exist', async () => {
       const creationDate = new Date();
 
       await keystore.saveSessionKey(peerSessionKey, peerPrivateAddress, creationDate);
 
-      const key = await publicKeyRepository.findOne(peerPrivateAddress);
+      const key = await sessionKeyRepository.findOne(peerPrivateAddress);
       expect(key?.creationDate).toEqual(creationDate);
       expect(key?.id).toEqual(peerSessionKey.keyId);
       expect(key?.derSerialization).toEqual(await derSerializePublicKey(peerSessionKey.publicKey));
@@ -60,8 +94,25 @@ describe('Session keys', () => {
       await keystore.saveSessionKey(peerSessionKey, peerPrivateAddress, oldCreationDate);
       await keystore.saveSessionKey(peerSessionKey, peerPrivateAddress, newCreationDate);
 
-      const key = await publicKeyRepository.findOne(peerPrivateAddress);
+      const key = await sessionKeyRepository.findOne(peerPrivateAddress);
       expect(key?.creationDate).toEqual(newCreationDate);
+    });
+  });
+
+  describe('Retrieve', () => {
+    test('Existing key should be returned', async () => {
+      await keystore.saveSessionKey(peerSessionKey, peerPrivateAddress, new Date());
+
+      const key = await keystore.retrieveLastSessionKey(peerPrivateAddress);
+
+      expect(key?.keyId).toEqual(peerSessionKey.keyId);
+      await expect(derSerializePublicKey(key!.publicKey)).resolves.toEqual(
+        await derSerializePublicKey(peerSessionKey.publicKey),
+      );
+    });
+
+    test('Non-existing key should result in null', async () => {
+      await expect(keystore.retrieveLastSessionKey(peerPrivateAddress)).resolves.toBeNull();
     });
   });
 });

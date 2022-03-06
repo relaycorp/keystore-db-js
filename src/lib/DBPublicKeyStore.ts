@@ -1,27 +1,39 @@
 import { PublicKeyStore, SessionPublicKeyData } from '@relaycorp/relaynet-core';
 import { Repository } from 'typeorm';
 
+import { IdentityPublicKey } from './entities/IdentityPublicKey';
 import { SessionPublicKey } from './entities/SessionPublicKey';
 
 export class DBPublicKeyStore extends PublicKeyStore {
-  constructor(private sessionRepository: Repository<SessionPublicKey>) {
+  constructor(
+    private identityKeyRepository: Repository<IdentityPublicKey>,
+    private sessionRepository: Repository<SessionPublicKey>,
+  ) {
     super();
   }
 
-  protected async saveIdentityKeySerialized(
+  protected override async saveIdentityKeySerialized(
     keySerialized: Buffer,
     peerPrivateAddress: string,
   ): Promise<void> {
-    throw new Error('Method not implemented.' + keySerialized + peerPrivateAddress);
+    const publicKey = await this.identityKeyRepository.create({
+      derSerialization: keySerialized,
+      peerPrivateAddress,
+    });
+    await this.identityKeyRepository.save(publicKey);
   }
 
-  protected async retrieveIdentityKeySerialized(
+  protected override async retrieveIdentityKeySerialized(
     peerPrivateAddress: string,
   ): Promise<Buffer | null> {
-    throw new Error('Method not implemented.' + peerPrivateAddress);
+    const publicKey = await this.identityKeyRepository.findOne(peerPrivateAddress);
+    if (publicKey === undefined) {
+      return null;
+    }
+    return publicKey.derSerialization;
   }
 
-  protected async saveSessionKeyData(
+  protected override async saveSessionKeyData(
     keyData: SessionPublicKeyData,
     peerPrivateAddress: string,
   ): Promise<void> {
@@ -34,7 +46,7 @@ export class DBPublicKeyStore extends PublicKeyStore {
     await this.sessionRepository.save(publicKey);
   }
 
-  protected async retrieveSessionKeyData(
+  protected override async retrieveSessionKeyData(
     peerPrivateAddress: string,
   ): Promise<SessionPublicKeyData | null> {
     const publicKey = await this.sessionRepository.findOne(peerPrivateAddress);
