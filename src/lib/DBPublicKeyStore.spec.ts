@@ -29,7 +29,7 @@ describe('Identity keys', () => {
   let peerPrivateAddress: string;
   beforeAll(async () => {
     const peerKeyPair = await generateRSAKeyPair();
-    peerIdentityPublicKey = peerKeyPair.publicKey;
+    peerIdentityPublicKey = peerKeyPair.publicKey!;
     peerPrivateAddress = await getPrivateAddressFromIdentityKey(peerIdentityPublicKey);
   });
 
