@@ -21,11 +21,10 @@ beforeEach(() => {
   keystore = new DBPrivateKeyStore(privateKeyRepository);
 });
 
-let identityKeyPair: CryptoKeyPair;
 let identityPrivateKey: CryptoKey;
 let privateAddress: string;
 beforeAll(async () => {
-  identityKeyPair = await generateRSAKeyPair();
+  const identityKeyPair = await generateRSAKeyPair();
   identityPrivateKey = identityKeyPair.privateKey!;
   privateAddress = await getPrivateAddressFromIdentityKey(identityKeyPair.publicKey!);
 });
