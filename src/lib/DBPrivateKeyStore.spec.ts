@@ -22,10 +22,12 @@ beforeEach(() => {
 });
 
 let identityKeyPair: CryptoKeyPair;
+let identityPrivateKey: CryptoKey;
 let privateAddress: string;
 beforeAll(async () => {
   identityKeyPair = await generateRSAKeyPair();
-  privateAddress = await getPrivateAddressFromIdentityKey(identityKeyPair.publicKey);
+  identityPrivateKey = identityKeyPair.privateKey!;
+  privateAddress = await getPrivateAddressFromIdentityKey(identityKeyPair.publicKey!);
 });
 
 let sessionKeyPair: SessionKeyPair;
@@ -39,11 +41,11 @@ const PEER_PRIVATE_ADDRESS = '0deadbeef';
 
 describe('Saving', () => {
   test('Identity key should have all its attributes stored', async () => {
-    await keystore.saveIdentityKey(identityKeyPair.privateKey);
+    await keystore.saveIdentityKey(identityPrivateKey);
 
     const key = await privateKeyRepository.findOne(`i-${privateAddress}`);
     expect(key).toMatchObject<Partial<PrivateKey>>({
-      derSerialization: await derSerializePrivateKey(identityKeyPair.privateKey),
+      derSerialization: await derSerializePrivateKey(identityPrivateKey),
       peerPrivateAddress: null,
     });
   });
@@ -91,12 +93,12 @@ describe('Saving', () => {
 
 describe('Retrieval', () => {
   test('Identity key should be returned', async () => {
-    await keystore.saveIdentityKey(identityKeyPair.privateKey);
+    await keystore.saveIdentityKey(identityPrivateKey);
 
     const key = await keystore.retrieveIdentityKey(privateAddress);
 
     await expect(derSerializePrivateKey(key)).resolves.toEqual(
-      await derSerializePrivateKey(identityKeyPair.privateKey),
+      await derSerializePrivateKey(identityPrivateKey),
     );
   });
 
