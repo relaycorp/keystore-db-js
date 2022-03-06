@@ -117,8 +117,8 @@ describe('retrieveLatestSerialization', () => {
   test('The latest valid certificate should be returned', async () => {
     await certificateStore.save(validCertificate, subjectPrivateAddress);
     const newerCertificate = await issueGatewayCertificate({
-      issuerPrivateKey: identityKeyPair.privateKey,
-      subjectPublicKey: identityKeyPair.publicKey,
+      issuerPrivateKey: identityKeyPair.privateKey!,
+      subjectPublicKey: identityKeyPair.publicKey!,
       validityEndDate: addSeconds(new Date(), 60),
     });
     await certificateStore.save(newerCertificate, subjectPrivateAddress);
