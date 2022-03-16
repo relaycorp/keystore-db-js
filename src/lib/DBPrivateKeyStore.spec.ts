@@ -96,7 +96,7 @@ describe('Retrieval', () => {
 
     const key = await keystore.retrieveIdentityKey(privateAddress);
 
-    await expect(derSerializePrivateKey(key)).resolves.toEqual(
+    await expect(derSerializePrivateKey(key!)).resolves.toEqual(
       await derSerializePrivateKey(identityPrivateKey),
     );
   });
@@ -151,9 +151,7 @@ describe('Retrieval', () => {
   });
 
   test('UnknownKeyError should be raised if identity key is missing', async () => {
-    await expect(keystore.retrieveIdentityKey(privateAddress)).rejects.toBeInstanceOf(
-      UnknownKeyError,
-    );
+    await expect(keystore.retrieveIdentityKey(privateAddress)).resolves.toBeNull();
   });
 
   test('UnknownKeyError should be raised if session key is missing', async () => {
