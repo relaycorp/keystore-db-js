@@ -36,17 +36,14 @@ export class DBCertificateStore extends CertificateStore {
     subjectPrivateAddress: string,
     issuerPrivateAddress: string,
   ): Promise<ArrayBuffer | null> {
-    const whereFields = {
+    const conditions = {
       expiryDate: MoreThanOrEqual(sqlDateFormat(new Date())),
       issuerPrivateAddress,
+      subjectPrivateAddress,
     };
-    const record = await this.repository.findOne(
-      { subjectPrivateAddress },
-      {
-        order: { expiryDate: 'DESC' },
-        where: whereFields,
-      },
-    );
+    const record = await this.repository.findOne(conditions, {
+      order: { expiryDate: 'DESC' },
+    });
     return record ? bufferToArray(record.certificateSerialized) : null;
   }
 
