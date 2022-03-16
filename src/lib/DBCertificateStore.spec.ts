@@ -98,8 +98,16 @@ describe('retrieveLatestSerialization', () => {
     ).resolves.toBeNull();
   });
 
+  test('Certificate from another subject should be ignored', async () => {
+    await certificateStore.save(validCertificate, subjectPrivateAddress);
+
+    await expect(
+      certificateStore.retrieveLatest(`not-${subjectPrivateAddress}`, subjectPrivateAddress),
+    ).resolves.toBeNull();
+  });
+
   test('Certificate from another issuer should be ignored', async () => {
-    await certificateStore.save(expiredCertificate, subjectPrivateAddress);
+    await certificateStore.save(validCertificate, subjectPrivateAddress);
 
     await expect(
       certificateStore.retrieveLatest(subjectPrivateAddress, `not-${subjectPrivateAddress}`),
