@@ -37,7 +37,7 @@ describe('Identity keys', () => {
     test('Key should be created if it does not exist', async () => {
       await keystore.saveIdentityKey(peerIdentityPublicKey);
 
-      const key = await identityKeyRepository.findOne(peerPrivateAddress);
+      const key = await identityKeyRepository.findOne({ where: { peerPrivateAddress } });
       expect(key?.derSerialization).toEqual(await derSerializePublicKey(peerIdentityPublicKey));
     });
 
@@ -45,7 +45,9 @@ describe('Identity keys', () => {
       await keystore.saveIdentityKey(peerIdentityPublicKey);
       await keystore.saveIdentityKey(peerIdentityPublicKey);
 
-      await expect(identityKeyRepository.count({ peerPrivateAddress })).resolves.toEqual(1);
+      await expect(identityKeyRepository.count({ where: { peerPrivateAddress } })).resolves.toEqual(
+        1,
+      );
     });
   });
 
@@ -80,7 +82,7 @@ describe('Session keys', () => {
 
       await keystore.saveSessionKey(peerSessionKey, peerPrivateAddress, creationDate);
 
-      const key = await sessionKeyRepository.findOne(peerPrivateAddress);
+      const key = await sessionKeyRepository.findOne({ where: { peerPrivateAddress } });
       expect(key?.creationDate).toEqual(creationDate);
       expect(key?.id).toEqual(peerSessionKey.keyId);
       expect(key?.derSerialization).toEqual(await derSerializePublicKey(peerSessionKey.publicKey));
@@ -94,7 +96,7 @@ describe('Session keys', () => {
       await keystore.saveSessionKey(peerSessionKey, peerPrivateAddress, oldCreationDate);
       await keystore.saveSessionKey(peerSessionKey, peerPrivateAddress, newCreationDate);
 
-      const key = await sessionKeyRepository.findOne(peerPrivateAddress);
+      const key = await sessionKeyRepository.findOne({ where: { peerPrivateAddress } });
       expect(key?.creationDate).toEqual(newCreationDate);
     });
   });

@@ -52,7 +52,7 @@ export class DBPrivateKeyStore extends PrivateKeyStore {
     await this.repository.save(privateKey);
   }
 
-  private async retrieveKey(keyId: string): Promise<PrivateKey | null> {
-    return (await this.repository.findOne(keyId)) ?? null;
+  private async retrieveKey(id: string): Promise<PrivateKey | null> {
+    return (await this.repository.findOne({ where: { id } })) ?? null;
   }
 }

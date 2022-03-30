@@ -42,7 +42,7 @@ describe('Saving', () => {
   test('Identity key should have all its attributes stored', async () => {
     await keystore.saveIdentityKey(identityPrivateKey);
 
-    const key = await privateKeyRepository.findOne(`i-${privateAddress}`);
+    const key = await privateKeyRepository.findOne({ where: { id: `i-${privateAddress}` } });
     expect(key).toMatchObject<Partial<PrivateKey>>({
       derSerialization: await derSerializePrivateKey(identityPrivateKey),
       peerPrivateAddress: null,
@@ -55,7 +55,7 @@ describe('Saving', () => {
       sessionKeyPair.sessionKey.keyId,
     );
 
-    const key = await privateKeyRepository.findOne(sessionKeyIdPk);
+    const key = await privateKeyRepository.findOne({ where: { id: sessionKeyIdPk } });
 
     expect(key).toMatchObject<Partial<PrivateKey>>({
       derSerialization: await derSerializePrivateKey(sessionKeyPair.privateKey),
@@ -70,7 +70,7 @@ describe('Saving', () => {
       PEER_PRIVATE_ADDRESS,
     );
 
-    const key = await privateKeyRepository.findOne(sessionKeyIdPk);
+    const key = await privateKeyRepository.findOne({ where: { id: sessionKeyIdPk } });
     expect(key).toMatchObject<Partial<PrivateKey>>({
       derSerialization: await derSerializePrivateKey(sessionKeyPair.privateKey),
       peerPrivateAddress: PEER_PRIVATE_ADDRESS,
@@ -85,7 +85,7 @@ describe('Saving', () => {
     const newPrivateKey = (await SessionKeyPair.generate()).privateKey;
     await keystore.saveUnboundSessionKey(newPrivateKey, sessionKeyPair.sessionKey.keyId);
 
-    const key = await privateKeyRepository.findOne(sessionKeyIdPk);
+    const key = await privateKeyRepository.findOne({ where: { id: sessionKeyIdPk } });
     expect(key!.derSerialization).toEqual(await derSerializePrivateKey(newPrivateKey));
   });
 });

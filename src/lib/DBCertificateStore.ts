@@ -1,12 +1,8 @@
 import { CertificateStore } from '@relaycorp/relaynet-core';
 import bufferToArray from 'buffer-to-arraybuffer';
-import { format } from 'date-fns';
-import { utcToZonedTime } from 'date-fns-tz';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 
 import { Certificate } from './entities/Certificate';
-
-const SQL_DATE_FORMAT = 'yyyy-MM-dd HH:mm:ss.SSS';
 
 export class DBCertificateStore extends CertificateStore {
   constructor(private repository: Repository<Certificate>) {
@@ -36,13 +32,14 @@ export class DBCertificateStore extends CertificateStore {
     subjectPrivateAddress: string,
     issuerPrivateAddress: string,
   ): Promise<ArrayBuffer | null> {
-    const conditions = {
-      expiryDate: MoreThanOrEqual(sqlDateFormat(new Date())),
+    const where = {
+      expiryDate: MoreThanOrEqual(new Date()),
       issuerPrivateAddress,
       subjectPrivateAddress,
     };
-    const record = await this.repository.findOne(conditions, {
+    const record = await this.repository.findOne({
       order: { expiryDate: 'DESC' },
+      where,
     });
     return record ? bufferToArray(record.certificateSerialized) : null;
   }
@@ -52,17 +49,12 @@ export class DBCertificateStore extends CertificateStore {
     issuerPrivateAddress: string,
   ): Promise<readonly ArrayBuffer[]> {
     const records = await this.repository.find({
-      expiryDate: MoreThanOrEqual(sqlDateFormat(new Date())),
-      issuerPrivateAddress,
-      subjectPrivateAddress,
+      where: {
+        expiryDate: MoreThanOrEqual(new Date()),
+        issuerPrivateAddress,
+        subjectPrivateAddress,
+      },
     });
     return records.map((record) => bufferToArray(record.certificateSerialized));
   }
-}
-
-function sqlDateFormat(date: Date): string {
-  const zonedDate = utcToZonedTime(date, 'UTC');
-  return format(zonedDate, SQL_DATE_FORMAT, {
-    timeZone: 'UTC',
-  } as any);
 }
