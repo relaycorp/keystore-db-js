@@ -4,7 +4,7 @@ import {
   getPrivateAddressFromIdentityKey,
   issueGatewayCertificate,
 } from '@relaycorp/relaynet-core';
-import { addDays, addSeconds, subSeconds } from 'date-fns';
+import { addDays, addSeconds, differenceInMilliseconds, subSeconds } from 'date-fns';
 import { getConnection, Repository } from 'typeorm';
 
 import { setUpTestDBConnection } from './_test_utils';
@@ -215,12 +215,12 @@ describe('deleteExpired', () => {
     const expiringCertificate = await issueGatewayCertificate({
       issuerPrivateKey: identityKeyPair.privateKey!,
       subjectPublicKey: identityKeyPair.publicKey!,
-      validityEndDate: addSeconds(new Date(), 1),
+      validityEndDate: addSeconds(new Date(), 3),
     });
     await certificateStore.save(expiringCertificate, subjectPrivateAddress);
     await certificateStore.save(expiringCertificate, `not-${subjectPrivateAddress}`);
     await expect(certificateRepository.count()).resolves.toEqual(2);
-    await new Promise((resolve) => setTimeout(resolve, 1_000));
+    await sleepUntilDate(expiringCertificate.expiryDate);
 
     await certificateStore.deleteExpired();
 
@@ -236,3 +236,8 @@ describe('deleteExpired', () => {
     await expect(certificateRepository.count()).resolves.toEqual(1);
   });
 });
+
+async function sleepUntilDate(date: Date): Promise<void> {
+  const deltaMs = differenceInMilliseconds(date, new Date());
+  await new Promise((resolve) => setTimeout(resolve, deltaMs));
+}
