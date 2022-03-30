@@ -5,19 +5,19 @@ import {
   issueGatewayCertificate,
 } from '@relaycorp/relaynet-core';
 import { addDays, addSeconds, differenceInMilliseconds, subSeconds } from 'date-fns';
-import { getConnection, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
-import { setUpTestDBConnection } from './_test_utils';
+import { setUpTestDBDataSource } from './_test_utils';
 import { DBCertificateStore } from './DBCertificateStore';
 import { Certificate as CertificateEntity } from './entities/Certificate';
 
-setUpTestDBConnection();
+const getDataSource = setUpTestDBDataSource();
 
 let certificateStore: DBCertificateStore;
 let certificateRepository: Repository<CertificateEntity>;
 beforeEach(() => {
-  const connection = getConnection();
-  certificateRepository = connection.getRepository(CertificateEntity);
+  const dataSource = getDataSource();
+  certificateRepository = dataSource.getRepository(CertificateEntity);
   certificateStore = new DBCertificateStore(certificateRepository);
 });
 
@@ -53,7 +53,9 @@ describe('saveData', () => {
   test('Certificate attributes should be saved', async () => {
     await certificateStore.save(validCertificate, subjectPrivateAddress);
 
-    const certificateRecord = await certificateRepository.findOneOrFail({ subjectPrivateAddress });
+    const certificateRecord = await certificateRepository.findOneOrFail({
+      where: { subjectPrivateAddress },
+    });
     expect(certificateRecord).toMatchObject<Partial<CertificateEntity>>({
       certificateSerialized: Buffer.from(validCertificate.serialize()),
       expiryDate: validCertificate.expiryDate,
@@ -64,7 +66,9 @@ describe('saveData', () => {
     const issuerPrivateAddress = `not-${subjectPrivateAddress}`;
     await certificateStore.save(validCertificate, issuerPrivateAddress);
 
-    const certificateRecord = await certificateRepository.findOneOrFail({ subjectPrivateAddress });
+    const certificateRecord = await certificateRepository.findOneOrFail({
+      where: { subjectPrivateAddress },
+    });
     expect(certificateRecord.issuerPrivateAddress).toEqual(issuerPrivateAddress);
   });
 
@@ -78,7 +82,9 @@ describe('saveData', () => {
     await certificateStore.save(validCertificate, subjectPrivateAddress);
     await certificateStore.save(certificate2, subjectPrivateAddress);
 
-    const certificateRecords = await certificateRepository.find({ subjectPrivateAddress });
+    const certificateRecords = await certificateRepository.find({
+      where: { subjectPrivateAddress },
+    });
     expect(certificateRecords).toHaveLength(2);
     expect(certificateRecords[0]).toMatchObject<Partial<CertificateEntity>>({
       certificateSerialized: Buffer.from(validCertificate.serialize()),

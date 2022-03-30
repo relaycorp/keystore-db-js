@@ -5,19 +5,19 @@ import {
   SessionKeyPair,
   UnknownKeyError,
 } from '@relaycorp/relaynet-core';
-import { getConnection, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
-import { setUpTestDBConnection } from './_test_utils';
+import { setUpTestDBDataSource } from './_test_utils';
 import { DBPrivateKeyStore } from './DBPrivateKeyStore';
 import { PrivateKey } from './entities/PrivateKey';
 
-setUpTestDBConnection();
+const getDataSource = setUpTestDBDataSource();
 
 let keystore: DBPrivateKeyStore;
 let privateKeyRepository: Repository<PrivateKey>;
 beforeEach(() => {
-  const connection = getConnection();
-  privateKeyRepository = connection.getRepository(PrivateKey);
+  const dataSource = getDataSource();
+  privateKeyRepository = dataSource.getRepository(PrivateKey);
   keystore = new DBPrivateKeyStore(privateKeyRepository);
 });
 
@@ -42,7 +42,7 @@ describe('Saving', () => {
   test('Identity key should have all its attributes stored', async () => {
     await keystore.saveIdentityKey(identityPrivateKey);
 
-    const key = await privateKeyRepository.findOne(`i-${privateAddress}`);
+    const key = await privateKeyRepository.findOne({ where: { id: `i-${privateAddress}` } });
     expect(key).toMatchObject<Partial<PrivateKey>>({
       derSerialization: await derSerializePrivateKey(identityPrivateKey),
       peerPrivateAddress: null,
@@ -55,7 +55,7 @@ describe('Saving', () => {
       sessionKeyPair.sessionKey.keyId,
     );
 
-    const key = await privateKeyRepository.findOne(sessionKeyIdPk);
+    const key = await privateKeyRepository.findOne({ where: { id: sessionKeyIdPk } });
 
     expect(key).toMatchObject<Partial<PrivateKey>>({
       derSerialization: await derSerializePrivateKey(sessionKeyPair.privateKey),
@@ -70,7 +70,7 @@ describe('Saving', () => {
       PEER_PRIVATE_ADDRESS,
     );
 
-    const key = await privateKeyRepository.findOne(sessionKeyIdPk);
+    const key = await privateKeyRepository.findOne({ where: { id: sessionKeyIdPk } });
     expect(key).toMatchObject<Partial<PrivateKey>>({
       derSerialization: await derSerializePrivateKey(sessionKeyPair.privateKey),
       peerPrivateAddress: PEER_PRIVATE_ADDRESS,
@@ -85,7 +85,7 @@ describe('Saving', () => {
     const newPrivateKey = (await SessionKeyPair.generate()).privateKey;
     await keystore.saveUnboundSessionKey(newPrivateKey, sessionKeyPair.sessionKey.keyId);
 
-    const key = await privateKeyRepository.findOne(sessionKeyIdPk);
+    const key = await privateKeyRepository.findOne({ where: { id: sessionKeyIdPk } });
     expect(key!.derSerialization).toEqual(await derSerializePrivateKey(newPrivateKey));
   });
 });

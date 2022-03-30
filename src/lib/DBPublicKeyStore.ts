@@ -26,11 +26,11 @@ export class DBPublicKeyStore extends PublicKeyStore {
   protected override async retrieveIdentityKeySerialized(
     peerPrivateAddress: string,
   ): Promise<Buffer | null> {
-    const publicKey = await this.identityKeyRepository.findOne(peerPrivateAddress);
-    if (publicKey === undefined) {
-      return null;
+    const publicKey = await this.identityKeyRepository.findOne({ where: { peerPrivateAddress } });
+    if (publicKey) {
+      return publicKey.derSerialization;
     }
-    return publicKey.derSerialization;
+    return null;
   }
 
   protected override async saveSessionKeyData(
@@ -49,14 +49,14 @@ export class DBPublicKeyStore extends PublicKeyStore {
   protected override async retrieveSessionKeyData(
     peerPrivateAddress: string,
   ): Promise<SessionPublicKeyData | null> {
-    const publicKey = await this.sessionRepository.findOne(peerPrivateAddress);
-    if (publicKey === undefined) {
-      return null;
+    const publicKey = await this.sessionRepository.findOne({ where: { peerPrivateAddress } });
+    if (publicKey) {
+      return {
+        publicKeyCreationTime: publicKey.creationDate,
+        publicKeyDer: publicKey.derSerialization,
+        publicKeyId: publicKey.id,
+      };
     }
-    return {
-      publicKeyCreationTime: publicKey.creationDate,
-      publicKeyDer: publicKey.derSerialization,
-      publicKeyId: publicKey.id,
-    };
+    return null;
   }
 }

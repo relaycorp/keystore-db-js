@@ -1,5 +1,5 @@
 import { dirname, join } from 'path';
-import { Connection, createConnection } from 'typeorm';
+import { DataSource } from 'typeorm';
 
 const IS_TYPESCRIPT = __filename.endsWith('.ts');
 const ENTITIES_DIR_PATH = join(
@@ -9,8 +9,8 @@ const ENTITIES_DIR_PATH = join(
   IS_TYPESCRIPT ? '*.ts' : '*.js',
 );
 
-export function setUpTestDBConnection(): void {
-  let connection: Connection;
+export function setUpTestDBDataSource(): () => DataSource {
+  let dataSource: DataSource;
 
   beforeAll(async () => {
     const connectionOptions = {
@@ -21,18 +21,21 @@ export function setUpTestDBConnection(): void {
       synchronize: true,
       type: 'sqlite',
     };
-    connection = await createConnection(connectionOptions as any);
+    dataSource = new DataSource(connectionOptions as any);
+    await dataSource.initialize();
   });
 
   beforeEach(async () => {
-    await connection.synchronize(true);
+    await dataSource.synchronize(true);
   });
 
   afterEach(async () => {
-    await connection.dropDatabase();
+    await dataSource.dropDatabase();
   });
 
   afterAll(async () => {
-    await connection.close();
+    await dataSource.destroy();
   });
+
+  return () => dataSource;
 }
