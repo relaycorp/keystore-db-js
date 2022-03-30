@@ -16,15 +16,15 @@ export class DBCertificateStore extends CertificateStore {
   }
 
   protected async saveData(
+    serialization: ArrayBuffer,
     subjectPrivateAddress: string,
-    subjectCertificateSerialized: ArrayBuffer,
     subjectCertificateExpiryDate: Date,
     issuerPrivateAddress: string,
   ): Promise<void> {
     const record = this.repository.create({
-      certificateSerialized: Buffer.from(subjectCertificateSerialized),
       expiryDate: subjectCertificateExpiryDate,
       issuerPrivateAddress,
+      serialization: Buffer.from(serialization),
       subjectPrivateAddress,
     });
     await this.repository.save(record);
@@ -43,7 +43,7 @@ export class DBCertificateStore extends CertificateStore {
       order: { expiryDate: 'DESC' },
       where,
     });
-    return record ? bufferToArray(record.certificateSerialized) : null;
+    return record ? bufferToArray(record.serialization) : null;
   }
 
   protected async retrieveAllSerializations(
@@ -57,6 +57,6 @@ export class DBCertificateStore extends CertificateStore {
         subjectPrivateAddress,
       },
     });
-    return records.map((record) => bufferToArray(record.certificateSerialized));
+    return records.map((record) => bufferToArray(record.serialization));
   }
 }
