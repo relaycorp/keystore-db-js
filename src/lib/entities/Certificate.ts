@@ -14,7 +14,7 @@ export class Certificate {
   public readonly issuerPrivateAddress!: string;
 
   @Column()
-  public readonly certificateSerialized!: Buffer;
+  public readonly serialization!: Buffer;
 
   @Index()
   @Column()
