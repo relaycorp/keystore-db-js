@@ -5,22 +5,22 @@ import {
   SessionKey,
   SessionKeyPair,
 } from '@relaycorp/relaynet-core';
-import { getConnection, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
-import { setUpTestDBConnection } from './_test_utils';
+import { setUpTestDBDataSource } from './_test_utils';
 import { DBPublicKeyStore } from './DBPublicKeyStore';
 import { IdentityPublicKey } from './entities/IdentityPublicKey';
 import { SessionPublicKey } from './entities/SessionPublicKey';
 
-setUpTestDBConnection();
+const getDataSource = setUpTestDBDataSource();
 
 let keystore: DBPublicKeyStore;
 let identityKeyRepository: Repository<IdentityPublicKey>;
 let sessionKeyRepository: Repository<SessionPublicKey>;
 beforeEach(() => {
-  const connection = getConnection();
-  identityKeyRepository = connection.getRepository(IdentityPublicKey);
-  sessionKeyRepository = connection.getRepository(SessionPublicKey);
+  const dataSource = getDataSource();
+  identityKeyRepository = dataSource.getRepository(IdentityPublicKey);
+  sessionKeyRepository = dataSource.getRepository(SessionPublicKey);
   keystore = new DBPublicKeyStore(identityKeyRepository, sessionKeyRepository);
 });
 

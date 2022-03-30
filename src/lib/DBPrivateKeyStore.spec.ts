@@ -5,19 +5,19 @@ import {
   SessionKeyPair,
   UnknownKeyError,
 } from '@relaycorp/relaynet-core';
-import { getConnection, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
-import { setUpTestDBConnection } from './_test_utils';
+import { setUpTestDBDataSource } from './_test_utils';
 import { DBPrivateKeyStore } from './DBPrivateKeyStore';
 import { PrivateKey } from './entities/PrivateKey';
 
-setUpTestDBConnection();
+const getDataSource = setUpTestDBDataSource();
 
 let keystore: DBPrivateKeyStore;
 let privateKeyRepository: Repository<PrivateKey>;
 beforeEach(() => {
-  const connection = getConnection();
-  privateKeyRepository = connection.getRepository(PrivateKey);
+  const dataSource = getDataSource();
+  privateKeyRepository = dataSource.getRepository(PrivateKey);
   keystore = new DBPrivateKeyStore(privateKeyRepository);
 });
 

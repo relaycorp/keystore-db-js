@@ -5,19 +5,19 @@ import {
   issueGatewayCertificate,
 } from '@relaycorp/relaynet-core';
 import { addDays, addSeconds, subSeconds } from 'date-fns';
-import { getConnection, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
-import { setUpTestDBConnection } from './_test_utils';
+import { setUpTestDBDataSource } from './_test_utils';
 import { DBCertificateStore } from './DBCertificateStore';
 import { Certificate as CertificateEntity } from './entities/Certificate';
 
-setUpTestDBConnection();
+const getDataSource = setUpTestDBDataSource();
 
 let certificateStore: DBCertificateStore;
 let certificateRepository: Repository<CertificateEntity>;
 beforeEach(() => {
-  const connection = getConnection();
-  certificateRepository = connection.getRepository(CertificateEntity);
+  const dataSource = getDataSource();
+  certificateRepository = dataSource.getRepository(CertificateEntity);
   certificateStore = new DBCertificateStore(certificateRepository);
 });
 
