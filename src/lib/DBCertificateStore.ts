@@ -2,7 +2,7 @@ import { CertificateStore } from '@relaycorp/relaynet-core';
 import bufferToArray from 'buffer-to-arraybuffer';
 import { format } from 'date-fns';
 import { utcToZonedTime } from 'date-fns-tz';
-import { MoreThanOrEqual, Repository } from 'typeorm';
+import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 
 import { Certificate } from './entities/Certificate';
 
@@ -14,7 +14,9 @@ export class DBCertificateStore extends CertificateStore {
   }
 
   public async deleteExpired(): Promise<void> {
-    return Promise.resolve(undefined);
+    await this.repository.delete({
+      expiryDate: LessThanOrEqual(sqlDateFormat(new Date())),
+    });
   }
 
   protected async saveData(
