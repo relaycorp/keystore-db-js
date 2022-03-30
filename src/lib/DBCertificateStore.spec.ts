@@ -4,7 +4,7 @@ import {
   getPrivateAddressFromIdentityKey,
   issueGatewayCertificate,
 } from '@relaycorp/relaynet-core';
-import { addDays, addSeconds, subSeconds } from 'date-fns';
+import { addDays, addSeconds, differenceInMilliseconds, subSeconds } from 'date-fns';
 import { Repository } from 'typeorm';
 
 import { setUpTestDBDataSource } from './_test_utils';
@@ -218,8 +218,15 @@ describe('retrieveAllSerializations', () => {
 
 describe('deleteExpired', () => {
   test('Expired certificates should be deleted', async () => {
-    await certificateStore.save(expiredCertificate, subjectPrivateAddress);
-    await certificateStore.save(expiredCertificate, `not-${subjectPrivateAddress}`);
+    const expiringCertificate = await issueGatewayCertificate({
+      issuerPrivateKey: identityKeyPair.privateKey!,
+      subjectPublicKey: identityKeyPair.publicKey!,
+      validityEndDate: addSeconds(new Date(), 3),
+    });
+    await certificateStore.save(expiringCertificate, subjectPrivateAddress);
+    await certificateStore.save(expiringCertificate, `not-${subjectPrivateAddress}`);
+    await expect(certificateRepository.count()).resolves.toEqual(2);
+    await sleepUntilDate(expiringCertificate.expiryDate);
 
     await certificateStore.deleteExpired();
 
@@ -228,9 +235,15 @@ describe('deleteExpired', () => {
 
   test('Valid certificates should not be deleted', async () => {
     await certificateStore.save(validCertificate, subjectPrivateAddress);
+    await expect(certificateRepository.count()).resolves.toEqual(1);
 
     await certificateStore.deleteExpired();
 
     await expect(certificateRepository.count()).resolves.toEqual(1);
   });
 });
+
+async function sleepUntilDate(date: Date): Promise<void> {
+  const deltaMs = differenceInMilliseconds(date, new Date());
+  await new Promise((resolve) => setTimeout(resolve, deltaMs));
+}

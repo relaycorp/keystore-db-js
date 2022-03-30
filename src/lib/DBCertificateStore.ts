@@ -1,6 +1,6 @@
 import { CertificateStore } from '@relaycorp/relaynet-core';
 import bufferToArray from 'buffer-to-arraybuffer';
-import { MoreThanOrEqual, Repository } from 'typeorm';
+import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 
 import { Certificate } from './entities/Certificate';
 
@@ -10,7 +10,9 @@ export class DBCertificateStore extends CertificateStore {
   }
 
   public async deleteExpired(): Promise<void> {
-    return Promise.resolve(undefined);
+    await this.repository.delete({
+      expiryDate: LessThanOrEqual(new Date()),
+    });
   }
 
   protected async saveData(
