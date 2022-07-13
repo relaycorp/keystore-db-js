@@ -238,7 +238,7 @@ describe('deleteExpired', () => {
     await certificateStore.save(expiringCertificate, [], subjectPrivateAddress);
     await certificateStore.save(expiringCertificate, [], `not-${subjectPrivateAddress}`);
     await expect(certificateRepository.count()).resolves.toEqual(2);
-    await sleepUntilDate(expiringCertificate.expiryDate);
+    await sleepUntilDate(addSeconds(expiringCertificate.expiryDate, 1));
 
     await certificateStore.deleteExpired();
 
