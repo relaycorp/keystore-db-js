@@ -8,11 +8,12 @@ export class DBPrivateKeyStore extends PrivateKeyStore {
     super();
   }
 
-  protected async saveIdentityKeySerialized(
-    privateAddress: string,
-    keySerialized: Buffer,
-  ): Promise<void> {
-    await this.saveData(`i-${privateAddress}`, keySerialized);
+  public async retrieveIdentityKey(_privateAddress: string): Promise<CryptoKey | null> {
+    throw new Error('Method not implemented.');
+  }
+
+  protected saveIdentityKey(_privateAddress: string, _privateKey: CryptoKey): Promise<void> {
+    throw new Error('Method not implemented.');
   }
 
   protected async saveSessionKeySerialized(
@@ -23,11 +24,6 @@ export class DBPrivateKeyStore extends PrivateKeyStore {
     await this.saveData(`s-${keyId}`, keySerialized, peerPrivateAddress);
   }
 
-  protected async retrieveIdentityKeySerialized(privateAddress: string): Promise<Buffer | null> {
-    const privateKey = await this.retrieveKey(`i-${privateAddress}`);
-    return privateKey?.derSerialization ?? null;
-  }
-
   protected async retrieveSessionKeyData(keyId: string): Promise<SessionPrivateKeyData | null> {
     const privateKey = await this.retrieveKey(`s-${keyId}`);
     if (!privateKey) {
@@ -36,6 +32,7 @@ export class DBPrivateKeyStore extends PrivateKeyStore {
     return {
       keySerialized: privateKey.derSerialization,
       peerPrivateAddress: privateKey.peerPrivateAddress ?? undefined,
+      privateAddress: 'REPLACE ME',
     };
   }
 
