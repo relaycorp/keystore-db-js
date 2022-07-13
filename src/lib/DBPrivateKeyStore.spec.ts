@@ -3,23 +3,26 @@ import { Repository } from 'typeorm';
 
 import { setUpTestDBDataSource } from './_test_utils';
 import { DBPrivateKeyStore } from './DBPrivateKeyStore';
-import { PrivateKey } from './entities/PrivateKey';
+import { IdentityPrivateKey } from './entities/IdentityPrivateKey';
+import { SessionPrivateKey } from './entities/SessionPrivateKey';
 
 const getDataSource = setUpTestDBDataSource();
 
 let keystore: DBPrivateKeyStore;
-let privateKeyRepository: Repository<PrivateKey>;
+let identityKeyRepository: Repository<IdentityPrivateKey>;
+let sessionKeyRepository: Repository<SessionPrivateKey>;
 beforeEach(() => {
   const dataSource = getDataSource();
-  privateKeyRepository = dataSource.getRepository(PrivateKey);
-  keystore = new DBPrivateKeyStore(privateKeyRepository);
+  identityKeyRepository = dataSource.getRepository(IdentityPrivateKey);
+  sessionKeyRepository = dataSource.getRepository(SessionPrivateKey);
+  keystore = new DBPrivateKeyStore(identityKeyRepository, sessionKeyRepository);
 });
 
 let sessionKeyPair: SessionKeyPair;
 let sessionKeyIdPk: string;
 beforeAll(async () => {
   sessionKeyPair = await SessionKeyPair.generate();
-  sessionKeyIdPk = `s-${sessionKeyPair.sessionKey.keyId.toString('hex')}`;
+  sessionKeyIdPk = sessionKeyPair.sessionKey.keyId.toString('hex');
 });
 
 const PRIVATE_ADDRESS = '0deadbeef';
@@ -29,10 +32,11 @@ describe('Saving', () => {
   test('Identity key should have all its attributes stored', async () => {
     const { privateAddress, privateKey } = await keystore.generateIdentityKeyPair();
 
-    const key = await privateKeyRepository.findOne({ where: { id: `i-${privateAddress}` } });
-    expect(key).toMatchObject<Partial<PrivateKey>>({
+    const key = await identityKeyRepository.findOne({
+      where: { privateAddress },
+    });
+    expect(key).toMatchObject<Partial<IdentityPrivateKey>>({
       derSerialization: await derSerializePrivateKey(privateKey),
-      peerPrivateAddress: null,
     });
   });
 
@@ -43,9 +47,9 @@ describe('Saving', () => {
       PRIVATE_ADDRESS,
     );
 
-    const key = await privateKeyRepository.findOne({ where: { id: sessionKeyIdPk } });
+    const key = await sessionKeyRepository.findOne({ where: { id: sessionKeyIdPk } });
 
-    expect(key).toMatchObject<Partial<PrivateKey>>({
+    expect(key).toMatchObject<Partial<SessionPrivateKey>>({
       derSerialization: await derSerializePrivateKey(sessionKeyPair.privateKey),
       peerPrivateAddress: null,
     });
@@ -59,8 +63,8 @@ describe('Saving', () => {
       PEER_PRIVATE_ADDRESS,
     );
 
-    const key = await privateKeyRepository.findOne({ where: { id: sessionKeyIdPk } });
-    expect(key).toMatchObject<Partial<PrivateKey>>({
+    const key = await sessionKeyRepository.findOne({ where: { id: sessionKeyIdPk } });
+    expect(key).toMatchObject<Partial<SessionPrivateKey>>({
       derSerialization: await derSerializePrivateKey(sessionKeyPair.privateKey),
       peerPrivateAddress: PEER_PRIVATE_ADDRESS,
     });
@@ -75,7 +79,7 @@ describe('Saving', () => {
     const newPrivateKey = (await SessionKeyPair.generate()).privateKey;
     await keystore.saveSessionKey(newPrivateKey, sessionKeyPair.sessionKey.keyId, PRIVATE_ADDRESS);
 
-    const key = await privateKeyRepository.findOne({ where: { id: sessionKeyIdPk } });
+    const key = await sessionKeyRepository.findOne({ where: { id: sessionKeyIdPk } });
     expect(key!.derSerialization).toEqual(await derSerializePrivateKey(newPrivateKey));
   });
 });
@@ -136,19 +140,13 @@ describe('Retrieval', () => {
     );
 
     const wrongPrivateAddress = `not-${PRIVATE_ADDRESS}`;
-    const sessionKeyIdHex = sessionKeyPair.sessionKey.keyId.toString('hex');
     await expect(
       keystore.retrieveSessionKey(
         sessionKeyPair.sessionKey.keyId,
         wrongPrivateAddress,
         PEER_PRIVATE_ADDRESS,
       ),
-    ).rejects.toEqual(
-      new UnknownKeyError(
-        `Session key ${sessionKeyIdHex} is bound to another node ` +
-          `(${PRIVATE_ADDRESS}, not ${wrongPrivateAddress})`,
-      ),
-    );
+    ).rejects.toEqual(new UnknownKeyError('Key is owned by a different node'));
   });
 
   test('Lookup should fail if key is bound to different recipient', async () => {
