@@ -1,58 +1,60 @@
-import { PrivateKeyStore, SessionPrivateKeyData } from '@relaycorp/relaynet-core';
+import {
+  derDeserializeRSAPrivateKey,
+  derSerializePrivateKey,
+  PrivateKeyStore,
+  SessionPrivateKeyData,
+} from '@relaycorp/relaynet-core';
 import { Repository } from 'typeorm';
 
-import { PrivateKey } from './entities/PrivateKey';
+import { IdentityPrivateKey } from './entities/IdentityPrivateKey';
+import { SessionPrivateKey } from './entities/SessionPrivateKey';
 
 export class DBPrivateKeyStore extends PrivateKeyStore {
-  constructor(private repository: Repository<PrivateKey>) {
+  constructor(
+    private identityKeyRepository: Repository<IdentityPrivateKey>,
+    private sessionKeyRepository: Repository<SessionPrivateKey>,
+  ) {
     super();
   }
 
-  protected async saveIdentityKeySerialized(
-    privateAddress: string,
-    keySerialized: Buffer,
-  ): Promise<void> {
-    await this.saveData(`i-${privateAddress}`, keySerialized);
+  public async retrieveIdentityKey(privateAddress: string): Promise<CryptoKey | null> {
+    const keyData = await this.identityKeyRepository.findOneBy({ privateAddress });
+    return keyData ? derDeserializeRSAPrivateKey(keyData.derSerialization) : null;
+  }
+
+  protected async saveIdentityKey(privateAddress: string, privateKey: CryptoKey): Promise<void> {
+    const privateKeySerialized = await derSerializePrivateKey(privateKey);
+    const privateKeyData = await this.identityKeyRepository.create({
+      derSerialization: privateKeySerialized,
+      privateAddress,
+    });
+    await this.identityKeyRepository.save(privateKeyData);
   }
 
   protected async saveSessionKeySerialized(
     keyId: string,
     keySerialized: Buffer,
+    privateAddress: string,
     peerPrivateAddress?: string,
   ): Promise<void> {
-    await this.saveData(`s-${keyId}`, keySerialized, peerPrivateAddress);
-  }
-
-  protected async retrieveIdentityKeySerialized(privateAddress: string): Promise<Buffer | null> {
-    const privateKey = await this.retrieveKey(`i-${privateAddress}`);
-    return privateKey?.derSerialization ?? null;
+    const privateKey = await this.sessionKeyRepository.create({
+      derSerialization: keySerialized,
+      id: keyId,
+      privateAddress,
+      peerPrivateAddress,
+    });
+    await this.sessionKeyRepository.save(privateKey);
   }
 
   protected async retrieveSessionKeyData(keyId: string): Promise<SessionPrivateKeyData | null> {
-    const privateKey = await this.retrieveKey(`s-${keyId}`);
+    const privateKey = await this.sessionKeyRepository.findOne({ where: { id: keyId } });
     if (!privateKey) {
       return null;
     }
     return {
       keySerialized: privateKey.derSerialization,
       peerPrivateAddress: privateKey.peerPrivateAddress ?? undefined,
+      privateAddress: privateKey.privateAddress!,
     };
-  }
-
-  private async saveData(
-    keyId: string,
-    keySerialized: Buffer,
-    peerPrivateAddress?: string,
-  ): Promise<void> {
-    const privateKey = await this.repository.create({
-      derSerialization: keySerialized,
-      id: keyId,
-      peerPrivateAddress,
-    });
-    await this.repository.save(privateKey);
-  }
-
-  private async retrieveKey(id: string): Promise<PrivateKey | null> {
-    return (await this.repository.findOne({ where: { id } })) ?? null;
   }
 }
