@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity()
-export class PrivateKey {
+export class SessionPrivateKey {
   @PrimaryColumn()
   public readonly id!: string;
 
@@ -10,6 +10,9 @@ export class PrivateKey {
 
   @CreateDateColumn()
   public readonly creationDate!: Date;
+
+  @Column()
+  public readonly privateAddress!: string;
 
   @Column({ type: 'varchar', nullable: true })
   public readonly peerPrivateAddress!: string | null;
