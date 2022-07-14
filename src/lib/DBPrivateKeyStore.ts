@@ -22,7 +22,7 @@ export class DBPrivateKeyStore extends PrivateKeyStore {
     return keyData ? derDeserializeRSAPrivateKey(keyData.derSerialization) : null;
   }
 
-  protected async saveIdentityKey(privateAddress: string, privateKey: CryptoKey): Promise<void> {
+  public async saveIdentityKey(privateAddress: string, privateKey: CryptoKey): Promise<void> {
     const privateKeySerialized = await derSerializePrivateKey(privateKey);
     const privateKeyData = await this.identityKeyRepository.create({
       derSerialization: privateKeySerialized,
