@@ -1,7 +1,7 @@
 import {
   derSerializePublicKey,
   generateRSAKeyPair,
-  getPrivateAddressFromIdentityKey,
+  getIdFromIdentityKey,
   SessionKey,
   SessionKeyPair,
 } from '@relaycorp/relaynet-core';
@@ -30,7 +30,7 @@ describe('Identity keys', () => {
   beforeAll(async () => {
     const peerKeyPair = await generateRSAKeyPair();
     peerIdentityPublicKey = peerKeyPair.publicKey!;
-    peerPrivateAddress = await getPrivateAddressFromIdentityKey(peerIdentityPublicKey);
+    peerPrivateAddress = await getIdFromIdentityKey(peerIdentityPublicKey);
   });
 
   describe('Save', () => {

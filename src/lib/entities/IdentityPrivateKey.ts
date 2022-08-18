@@ -3,7 +3,7 @@ import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
 @Entity()
 export class IdentityPrivateKey {
   @PrimaryColumn()
-  public readonly privateAddress!: string;
+  public readonly id!: string;
 
   @Column()
   public readonly derSerialization!: Buffer;
