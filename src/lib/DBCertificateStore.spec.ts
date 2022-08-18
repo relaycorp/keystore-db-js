@@ -2,7 +2,7 @@ import {
   Certificate,
   CertificationPath,
   generateRSAKeyPair,
-  getPrivateAddressFromIdentityKey,
+  getIdFromIdentityKey,
   issueGatewayCertificate,
 } from '@relaycorp/relaynet-core';
 import { addDays, addSeconds, differenceInMilliseconds, subSeconds } from 'date-fns';
@@ -26,7 +26,7 @@ let identityKeyPair: CryptoKeyPair;
 let subjectPrivateAddress: string;
 beforeAll(async () => {
   identityKeyPair = await generateRSAKeyPair();
-  subjectPrivateAddress = await getPrivateAddressFromIdentityKey(identityKeyPair.publicKey!);
+  subjectPrivateAddress = await getIdFromIdentityKey(identityKeyPair.publicKey!);
 });
 
 let validCertificate: Certificate;

@@ -12,8 +12,8 @@ export class SessionPrivateKey {
   public readonly creationDate!: Date;
 
   @Column()
-  public readonly privateAddress!: string;
+  public readonly nodeId!: string;
 
   @Column({ type: 'varchar', nullable: true })
-  public readonly peerPrivateAddress!: string | null;
+  public readonly peerId!: string | null;
 }

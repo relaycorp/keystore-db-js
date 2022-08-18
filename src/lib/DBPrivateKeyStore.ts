@@ -18,7 +18,7 @@ export class DBPrivateKeyStore extends PrivateKeyStore {
   }
 
   public async retrieveIdentityKey(privateAddress: string): Promise<CryptoKey | null> {
-    const keyData = await this.identityKeyRepository.findOneBy({ privateAddress });
+    const keyData = await this.identityKeyRepository.findOneBy({ id: privateAddress });
     return keyData ? derDeserializeRSAPrivateKey(keyData.derSerialization) : null;
   }
 
@@ -26,7 +26,7 @@ export class DBPrivateKeyStore extends PrivateKeyStore {
     const privateKeySerialized = await derSerializePrivateKey(privateKey);
     const privateKeyData = await this.identityKeyRepository.create({
       derSerialization: privateKeySerialized,
-      privateAddress,
+      id: privateAddress,
     });
     await this.identityKeyRepository.save(privateKeyData);
   }
@@ -40,8 +40,8 @@ export class DBPrivateKeyStore extends PrivateKeyStore {
     const privateKey = await this.sessionKeyRepository.create({
       derSerialization: keySerialized,
       id: keyId,
-      privateAddress,
-      peerPrivateAddress,
+      nodeId: privateAddress,
+      peerId: peerPrivateAddress,
     });
     await this.sessionKeyRepository.save(privateKey);
   }
@@ -53,8 +53,8 @@ export class DBPrivateKeyStore extends PrivateKeyStore {
     }
     return {
       keySerialized: privateKey.derSerialization,
-      peerPrivateAddress: privateKey.peerPrivateAddress ?? undefined,
-      privateAddress: privateKey.privateAddress!,
+      peerId: privateKey.peerId ?? undefined,
+      nodeId: privateKey.nodeId!,
     };
   }
 }
