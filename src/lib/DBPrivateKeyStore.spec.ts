@@ -25,8 +25,8 @@ beforeAll(async () => {
   sessionKeyIdPk = sessionKeyPair.sessionKey.keyId.toString('hex');
 });
 
-const PRIVATE_ADDRESS = '0deadbeef';
-const PEER_PRIVATE_ADDRESS = '0deadc0de';
+const NODE_ID = '0deadbeef';
+const PEER_ID = '0deadc0de';
 
 describe('Saving', () => {
   test('Identity key should have all its attributes stored', async () => {
@@ -44,7 +44,7 @@ describe('Saving', () => {
     await keystore.saveSessionKey(
       sessionKeyPair.privateKey,
       sessionKeyPair.sessionKey.keyId,
-      PRIVATE_ADDRESS,
+      NODE_ID,
     );
 
     const key = await sessionKeyRepository.findOne({ where: { id: sessionKeyIdPk } });
@@ -59,14 +59,14 @@ describe('Saving', () => {
     await keystore.saveSessionKey(
       sessionKeyPair.privateKey,
       sessionKeyPair.sessionKey.keyId,
-      PRIVATE_ADDRESS,
-      PEER_PRIVATE_ADDRESS,
+      NODE_ID,
+      PEER_ID,
     );
 
     const key = await sessionKeyRepository.findOne({ where: { id: sessionKeyIdPk } });
     expect(key).toMatchObject<Partial<SessionPrivateKey>>({
       derSerialization: await derSerializePrivateKey(sessionKeyPair.privateKey),
-      peerId: PEER_PRIVATE_ADDRESS,
+      peerId: PEER_ID,
     });
   });
 
@@ -74,10 +74,10 @@ describe('Saving', () => {
     await keystore.saveSessionKey(
       sessionKeyPair.privateKey,
       sessionKeyPair.sessionKey.keyId,
-      PRIVATE_ADDRESS,
+      NODE_ID,
     );
     const newPrivateKey = (await SessionKeyPair.generate()).privateKey;
-    await keystore.saveSessionKey(newPrivateKey, sessionKeyPair.sessionKey.keyId, PRIVATE_ADDRESS);
+    await keystore.saveSessionKey(newPrivateKey, sessionKeyPair.sessionKey.keyId, NODE_ID);
 
     const key = await sessionKeyRepository.findOne({ where: { id: sessionKeyIdPk } });
     expect(key!.derSerialization).toEqual(await derSerializePrivateKey(newPrivateKey));
@@ -99,12 +99,12 @@ describe('Retrieval', () => {
     await keystore.saveSessionKey(
       sessionKeyPair.privateKey,
       sessionKeyPair.sessionKey.keyId,
-      PRIVATE_ADDRESS,
+      NODE_ID,
     );
 
     const privateKey = await keystore.retrieveUnboundSessionKey(
       sessionKeyPair.sessionKey.keyId,
-      PRIVATE_ADDRESS,
+      NODE_ID,
     );
 
     await expect(derSerializePrivateKey(privateKey)).resolves.toEqual(
@@ -116,14 +116,14 @@ describe('Retrieval', () => {
     await keystore.saveSessionKey(
       sessionKeyPair.privateKey,
       sessionKeyPair.sessionKey.keyId,
-      PRIVATE_ADDRESS,
-      PEER_PRIVATE_ADDRESS,
+      NODE_ID,
+      PEER_ID,
     );
 
     const key = await keystore.retrieveSessionKey(
       sessionKeyPair.sessionKey.keyId,
-      PRIVATE_ADDRESS,
-      PEER_PRIVATE_ADDRESS,
+      NODE_ID,
+      PEER_ID,
     );
 
     await expect(derSerializePrivateKey(key)).resolves.toEqual(
@@ -135,17 +135,13 @@ describe('Retrieval', () => {
     await keystore.saveSessionKey(
       sessionKeyPair.privateKey,
       sessionKeyPair.sessionKey.keyId,
-      PRIVATE_ADDRESS,
-      PEER_PRIVATE_ADDRESS,
+      NODE_ID,
+      PEER_ID,
     );
 
-    const wrongPrivateAddress = `not-${PRIVATE_ADDRESS}`;
+    const wrongId = `not-${NODE_ID}`;
     await expect(
-      keystore.retrieveSessionKey(
-        sessionKeyPair.sessionKey.keyId,
-        wrongPrivateAddress,
-        PEER_PRIVATE_ADDRESS,
-      ),
+      keystore.retrieveSessionKey(sessionKeyPair.sessionKey.keyId, wrongId, PEER_ID),
     ).rejects.toEqual(new UnknownKeyError('Key is owned by a different node'));
   });
 
@@ -153,22 +149,18 @@ describe('Retrieval', () => {
     await keystore.saveSessionKey(
       sessionKeyPair.privateKey,
       sessionKeyPair.sessionKey.keyId,
-      PRIVATE_ADDRESS,
-      PEER_PRIVATE_ADDRESS,
+      NODE_ID,
+      PEER_ID,
     );
 
-    const wrongPeerPrivateAddress = `not-${PEER_PRIVATE_ADDRESS}`;
+    const wrongPeerId = `not-${PEER_ID}`;
     const sessionKeyIdHex = sessionKeyPair.sessionKey.keyId.toString('hex');
     await expect(
-      keystore.retrieveSessionKey(
-        sessionKeyPair.sessionKey.keyId,
-        PRIVATE_ADDRESS,
-        wrongPeerPrivateAddress,
-      ),
+      keystore.retrieveSessionKey(sessionKeyPair.sessionKey.keyId, NODE_ID, wrongPeerId),
     ).rejects.toEqual(
       new UnknownKeyError(
         `Session key ${sessionKeyIdHex} is bound to another recipient ` +
-          `(${PEER_PRIVATE_ADDRESS}, not ${wrongPeerPrivateAddress})`,
+          `(${PEER_ID}, not ${wrongPeerId})`,
       ),
     );
   });
@@ -179,11 +171,7 @@ describe('Retrieval', () => {
 
   test('UnknownKeyError should be raised if session key is missing', async () => {
     await expect(
-      keystore.retrieveSessionKey(
-        sessionKeyPair.sessionKey.keyId,
-        PRIVATE_ADDRESS,
-        PEER_PRIVATE_ADDRESS,
-      ),
+      keystore.retrieveSessionKey(sessionKeyPair.sessionKey.keyId, NODE_ID, PEER_ID),
     ).rejects.toBeInstanceOf(UnknownKeyError);
   });
 });

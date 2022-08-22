@@ -14,19 +14,17 @@ export class DBPublicKeyStore extends PublicKeyStore {
 
   protected override async saveIdentityKeySerialized(
     keySerialized: Buffer,
-    peerPrivateAddress: string,
+    peerId: string,
   ): Promise<void> {
     const publicKey = await this.identityKeyRepository.create({
       derSerialization: keySerialized,
-      peerPrivateAddress,
+      peerId,
     });
     await this.identityKeyRepository.save(publicKey);
   }
 
-  protected override async retrieveIdentityKeySerialized(
-    peerPrivateAddress: string,
-  ): Promise<Buffer | null> {
-    const publicKey = await this.identityKeyRepository.findOne({ where: { peerPrivateAddress } });
+  protected override async retrieveIdentityKeySerialized(peerId: string): Promise<Buffer | null> {
+    const publicKey = await this.identityKeyRepository.findOne({ where: { peerId } });
     if (publicKey) {
       return publicKey.derSerialization;
     }
@@ -35,21 +33,21 @@ export class DBPublicKeyStore extends PublicKeyStore {
 
   protected override async saveSessionKeyData(
     keyData: SessionPublicKeyData,
-    peerPrivateAddress: string,
+    peerId: string,
   ): Promise<void> {
     const publicKey = await this.sessionRepository.create({
       creationDate: keyData.publicKeyCreationTime,
       derSerialization: keyData.publicKeyDer,
       id: keyData.publicKeyId,
-      peerPrivateAddress,
+      peerId,
     });
     await this.sessionRepository.save(publicKey);
   }
 
   protected override async retrieveSessionKeyData(
-    peerPrivateAddress: string,
+    peerId: string,
   ): Promise<SessionPublicKeyData | null> {
-    const publicKey = await this.sessionRepository.findOne({ where: { peerPrivateAddress } });
+    const publicKey = await this.sessionRepository.findOne({ where: { peerId } });
     if (publicKey) {
       return {
         publicKeyCreationTime: publicKey.creationDate,

@@ -17,27 +17,27 @@ export class DBCertificateStore extends CertificateStore {
 
   protected async saveData(
     serialization: ArrayBuffer,
-    subjectPrivateAddress: string,
+    subjectId: string,
     subjectCertificateExpiryDate: Date,
-    issuerPrivateAddress: string,
+    issuerId: string,
   ): Promise<void> {
     const record = this.repository.create({
       expiryDate: subjectCertificateExpiryDate,
-      issuerPrivateAddress,
+      issuerId,
       serialization: Buffer.from(serialization),
-      subjectPrivateAddress,
+      subjectId,
     });
     await this.repository.save(record);
   }
 
   protected async retrieveLatestSerialization(
-    subjectPrivateAddress: string,
-    issuerPrivateAddress: string,
+    subjectId: string,
+    issuerId: string,
   ): Promise<ArrayBuffer | null> {
     const where = {
       expiryDate: MoreThanOrEqual(new Date()),
-      issuerPrivateAddress,
-      subjectPrivateAddress,
+      issuerId,
+      subjectId,
     };
     const record = await this.repository.findOne({
       order: { expiryDate: 'DESC' },
@@ -47,14 +47,14 @@ export class DBCertificateStore extends CertificateStore {
   }
 
   protected async retrieveAllSerializations(
-    subjectPrivateAddress: string,
-    issuerPrivateAddress: string,
+    subjectId: string,
+    issuerId: string,
   ): Promise<readonly ArrayBuffer[]> {
     const records = await this.repository.find({
       where: {
         expiryDate: MoreThanOrEqual(new Date()),
-        issuerPrivateAddress,
-        subjectPrivateAddress,
+        issuerId,
+        subjectId,
       },
     });
     return records.map((record) => bufferToArray(record.serialization));

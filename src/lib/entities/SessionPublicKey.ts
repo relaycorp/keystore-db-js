@@ -3,7 +3,7 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
 @Entity()
 export class SessionPublicKey {
   @PrimaryColumn()
-  public readonly peerPrivateAddress!: string;
+  public readonly peerId!: string;
 
   @Column()
   public readonly id!: Buffer;
