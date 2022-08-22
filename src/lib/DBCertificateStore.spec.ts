@@ -23,10 +23,10 @@ beforeEach(() => {
 });
 
 let identityKeyPair: CryptoKeyPair;
-let subjectPrivateAddress: string;
+let subjectId: string;
 beforeAll(async () => {
   identityKeyPair = await generateRSAKeyPair();
-  subjectPrivateAddress = await getIdFromIdentityKey(identityKeyPair.publicKey!);
+  subjectId = await getIdFromIdentityKey(identityKeyPair.publicKey!);
 });
 
 let validCertificate: Certificate;
@@ -52,22 +52,22 @@ beforeEach(async () => {
 
 describe('saveData', () => {
   test('Expiry date should be saved', async () => {
-    await certificateStore.save(new CertificationPath(validCertificate, []), subjectPrivateAddress);
+    await certificateStore.save(new CertificationPath(validCertificate, []), subjectId);
 
     const certificateRecord = await certificateRepository.findOneOrFail({
-      where: { subjectPrivateAddress },
+      where: { subjectId },
     });
     expect(certificateRecord.expiryDate).toEqual(validCertificate.expiryDate);
   });
 
   test('Issuer addressed should be honoured', async () => {
-    const issuerPrivateAddress = `not-${subjectPrivateAddress}`;
-    await certificateStore.save(new CertificationPath(validCertificate, []), issuerPrivateAddress);
+    const issuerId = `not-${subjectId}`;
+    await certificateStore.save(new CertificationPath(validCertificate, []), issuerId);
 
     const certificateRecord = await certificateRepository.findOneOrFail({
-      where: { subjectPrivateAddress },
+      where: { subjectId },
     });
-    expect(certificateRecord.issuerPrivateAddress).toEqual(issuerPrivateAddress);
+    expect(certificateRecord.issuerId).toEqual(issuerId);
   });
 
   test('The same subject should be allowed to have multiple certificates', async () => {
@@ -77,11 +77,11 @@ describe('saveData', () => {
       validityEndDate: addDays(validCertificate.expiryDate, 1),
     });
 
-    await certificateStore.save(new CertificationPath(validCertificate, []), subjectPrivateAddress);
-    await certificateStore.save(new CertificationPath(certificate2, []), subjectPrivateAddress);
+    await certificateStore.save(new CertificationPath(validCertificate, []), subjectId);
+    await certificateStore.save(new CertificationPath(certificate2, []), subjectId);
 
     const certificateRecords = await certificateRepository.find({
-      where: { subjectPrivateAddress },
+      where: { subjectId },
     });
     expect(certificateRecords).toHaveLength(2);
     expect(certificateRecords[0].expiryDate).toEqual(validCertificate.expiryDate);
@@ -91,51 +91,41 @@ describe('saveData', () => {
 
 describe('retrieveLatestSerialization', () => {
   test('Nothing should be returned if subject has no certificates', async () => {
-    await expect(
-      certificateStore.retrieveLatest(subjectPrivateAddress, subjectPrivateAddress),
-    ).resolves.toBeNull();
+    await expect(certificateStore.retrieveLatest(subjectId, subjectId)).resolves.toBeNull();
   });
 
   test('Certificate from another subject should be ignored', async () => {
-    await certificateStore.save(new CertificationPath(validCertificate, []), subjectPrivateAddress);
+    await certificateStore.save(new CertificationPath(validCertificate, []), subjectId);
 
     await expect(
-      certificateStore.retrieveLatest(`not-${subjectPrivateAddress}`, subjectPrivateAddress),
+      certificateStore.retrieveLatest(`not-${subjectId}`, subjectId),
     ).resolves.toBeNull();
   });
 
   test('Certificate from another issuer should be ignored', async () => {
-    await certificateStore.save(new CertificationPath(validCertificate, []), subjectPrivateAddress);
+    await certificateStore.save(new CertificationPath(validCertificate, []), subjectId);
 
     await expect(
-      certificateStore.retrieveLatest(subjectPrivateAddress, `not-${subjectPrivateAddress}`),
+      certificateStore.retrieveLatest(subjectId, `not-${subjectId}`),
     ).resolves.toBeNull();
   });
 
   test('Expired certificates should not be returned', async () => {
-    await certificateStore.save(
-      new CertificationPath(expiredCertificate, []),
-      subjectPrivateAddress,
-    );
+    await certificateStore.save(new CertificationPath(expiredCertificate, []), subjectId);
 
-    await expect(
-      certificateStore.retrieveLatest(subjectPrivateAddress, subjectPrivateAddress),
-    ).resolves.toBeNull();
+    await expect(certificateStore.retrieveLatest(subjectId, subjectId)).resolves.toBeNull();
   });
 
   test('The latest valid certificate should be returned', async () => {
-    await certificateStore.save(new CertificationPath(validCertificate, []), subjectPrivateAddress);
+    await certificateStore.save(new CertificationPath(validCertificate, []), subjectId);
     const newerCertificate = await issueGatewayCertificate({
       issuerPrivateKey: identityKeyPair.privateKey!,
       subjectPublicKey: identityKeyPair.publicKey!,
       validityEndDate: addSeconds(new Date(), 60),
     });
-    await certificateStore.save(new CertificationPath(newerCertificate, []), subjectPrivateAddress);
+    await certificateStore.save(new CertificationPath(newerCertificate, []), subjectId);
 
-    const latestCertificate = await certificateStore.retrieveLatest(
-      subjectPrivateAddress,
-      subjectPrivateAddress,
-    );
+    const latestCertificate = await certificateStore.retrieveLatest(subjectId, subjectId);
 
     expect(latestCertificate!.leafCertificate.isEqual(newerCertificate)).toBeTrue();
   });
@@ -148,13 +138,10 @@ describe('retrieveLatestSerialization', () => {
     });
     await certificateStore.save(
       new CertificationPath(validCertificate, [rootCertificate]),
-      subjectPrivateAddress,
+      subjectId,
     );
 
-    const latestPath = await certificateStore.retrieveLatest(
-      subjectPrivateAddress,
-      subjectPrivateAddress,
-    );
+    const latestPath = await certificateStore.retrieveLatest(subjectId, subjectId);
 
     expect(latestPath!.certificateAuthorities).toHaveLength(1);
     expect(latestPath!.certificateAuthorities[0].isEqual(rootCertificate)).toBeTrue();
@@ -166,16 +153,10 @@ describe('retrieveLatestSerialization', () => {
       subjectPublicKey: identityKeyPair.publicKey!,
       validityEndDate: addSeconds(validCertificate.expiryDate, 3),
     });
-    await certificateStore.save(
-      new CertificationPath(newestCertificate, []),
-      subjectPrivateAddress,
-    );
-    await certificateStore.save(new CertificationPath(validCertificate, []), subjectPrivateAddress);
+    await certificateStore.save(new CertificationPath(newestCertificate, []), subjectId);
+    await certificateStore.save(new CertificationPath(validCertificate, []), subjectId);
 
-    const latestPath = await certificateStore.retrieveLatest(
-      subjectPrivateAddress,
-      subjectPrivateAddress,
-    );
+    const latestPath = await certificateStore.retrieveLatest(subjectId, subjectId);
 
     expect(latestPath!.leafCertificate.isEqual(newestCertificate)).toBeTrue();
   });
@@ -183,24 +164,17 @@ describe('retrieveLatestSerialization', () => {
 
 describe('retrieveAllSerializations', () => {
   test('Nothing should be returned if there are no certificates', async () => {
-    await expect(
-      certificateStore.retrieveAll(subjectPrivateAddress, subjectPrivateAddress),
-    ).resolves.toBeEmpty();
+    await expect(certificateStore.retrieveAll(subjectId, subjectId)).resolves.toBeEmpty();
   });
 
   test('Expired certificates should not be returned', async () => {
-    await certificateStore.save(
-      new CertificationPath(expiredCertificate, []),
-      subjectPrivateAddress,
-    );
+    await certificateStore.save(new CertificationPath(expiredCertificate, []), subjectId);
 
-    await expect(
-      certificateStore.retrieveAll(subjectPrivateAddress, subjectPrivateAddress),
-    ).resolves.toBeEmpty();
+    await expect(certificateStore.retrieveAll(subjectId, subjectId)).resolves.toBeEmpty();
   });
 
   test('Certificates from another issuer should be ignored', async () => {
-    await certificateStore.save(new CertificationPath(validCertificate, []), subjectPrivateAddress);
+    await certificateStore.save(new CertificationPath(validCertificate, []), subjectId);
     const differentIssuerCertificate = await issueGatewayCertificate({
       issuerPrivateKey: identityKeyPair.privateKey!,
       subjectPublicKey: identityKeyPair.publicKey!,
@@ -208,34 +182,25 @@ describe('retrieveAllSerializations', () => {
     });
     await certificateStore.save(
       new CertificationPath(differentIssuerCertificate, []),
-      `not-${subjectPrivateAddress}`,
+      `not-${subjectId}`,
     );
 
-    const allCertificates = await certificateStore.retrieveAll(
-      subjectPrivateAddress,
-      subjectPrivateAddress,
-    );
+    const allCertificates = await certificateStore.retrieveAll(subjectId, subjectId);
 
     expect(allCertificates).toHaveLength(1);
     expect(allCertificates[0].leafCertificate.isEqual(validCertificate)).toBeTrue();
   });
 
   test('All valid certificates should be returned', async () => {
-    await certificateStore.save(new CertificationPath(validCertificate, []), subjectPrivateAddress);
+    await certificateStore.save(new CertificationPath(validCertificate, []), subjectId);
     const newestCertificate = await issueGatewayCertificate({
       issuerPrivateKey: identityKeyPair.privateKey!,
       subjectPublicKey: identityKeyPair.publicKey!,
       validityEndDate: addSeconds(validCertificate.expiryDate, 3),
     });
-    await certificateStore.save(
-      new CertificationPath(newestCertificate, []),
-      subjectPrivateAddress,
-    );
+    await certificateStore.save(new CertificationPath(newestCertificate, []), subjectId);
 
-    const allCertificates = await certificateStore.retrieveAll(
-      subjectPrivateAddress,
-      subjectPrivateAddress,
-    );
+    const allCertificates = await certificateStore.retrieveAll(subjectId, subjectId);
 
     expect(allCertificates).toHaveLength(2);
     expect(
@@ -254,14 +219,8 @@ describe('deleteExpired', () => {
       subjectPublicKey: identityKeyPair.publicKey!,
       validityEndDate: addSeconds(new Date(), 3),
     });
-    await certificateStore.save(
-      new CertificationPath(expiringCertificate, []),
-      subjectPrivateAddress,
-    );
-    await certificateStore.save(
-      new CertificationPath(expiringCertificate, []),
-      `not-${subjectPrivateAddress}`,
-    );
+    await certificateStore.save(new CertificationPath(expiringCertificate, []), subjectId);
+    await certificateStore.save(new CertificationPath(expiringCertificate, []), `not-${subjectId}`);
     await expect(certificateRepository.count()).resolves.toEqual(2);
     await sleepUntilDate(addSeconds(expiringCertificate.expiryDate, 1));
 
@@ -271,7 +230,7 @@ describe('deleteExpired', () => {
   });
 
   test('Valid certificates should not be deleted', async () => {
-    await certificateStore.save(new CertificationPath(validCertificate, []), subjectPrivateAddress);
+    await certificateStore.save(new CertificationPath(validCertificate, []), subjectId);
     await expect(certificateRepository.count()).resolves.toEqual(1);
 
     await certificateStore.deleteExpired();

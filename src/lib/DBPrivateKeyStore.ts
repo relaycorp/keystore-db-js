@@ -17,16 +17,16 @@ export class DBPrivateKeyStore extends PrivateKeyStore {
     super();
   }
 
-  public async retrieveIdentityKey(privateAddress: string): Promise<CryptoKey | null> {
-    const keyData = await this.identityKeyRepository.findOneBy({ id: privateAddress });
+  public async retrieveIdentityKey(id: string): Promise<CryptoKey | null> {
+    const keyData = await this.identityKeyRepository.findOneBy({ id });
     return keyData ? derDeserializeRSAPrivateKey(keyData.derSerialization) : null;
   }
 
-  public async saveIdentityKey(privateAddress: string, privateKey: CryptoKey): Promise<void> {
+  public async saveIdentityKey(id: string, privateKey: CryptoKey): Promise<void> {
     const privateKeySerialized = await derSerializePrivateKey(privateKey);
     const privateKeyData = await this.identityKeyRepository.create({
       derSerialization: privateKeySerialized,
-      id: privateAddress,
+      id,
     });
     await this.identityKeyRepository.save(privateKeyData);
   }
@@ -34,14 +34,14 @@ export class DBPrivateKeyStore extends PrivateKeyStore {
   protected async saveSessionKeySerialized(
     keyId: string,
     keySerialized: Buffer,
-    privateAddress: string,
-    peerPrivateAddress?: string,
+    nodeId: string,
+    peerId?: string,
   ): Promise<void> {
     const privateKey = await this.sessionKeyRepository.create({
       derSerialization: keySerialized,
       id: keyId,
-      nodeId: privateAddress,
-      peerId: peerPrivateAddress,
+      nodeId,
+      peerId,
     });
     await this.sessionKeyRepository.save(privateKey);
   }

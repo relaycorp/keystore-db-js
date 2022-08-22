@@ -7,11 +7,11 @@ export class Certificate {
 
   @Index()
   @Column()
-  public readonly subjectPrivateAddress!: string;
+  public readonly subjectId!: string;
 
   @Index()
   @Column()
-  public readonly issuerPrivateAddress!: string;
+  public readonly issuerId!: string;
 
   @Column()
   public readonly serialization!: Buffer;
